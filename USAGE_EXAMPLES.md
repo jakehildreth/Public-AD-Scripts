@@ -8,8 +8,8 @@
 - [Mode 4: TEST Reset](#mode-4-test-reset)
 - [Mode 5: PROD Simulation](#mode-5-prod-simulation)
 - [Mode 6: PROD Reset](#mode-6-prod-reset)
-- [Mode 8: Create TEST Accounts](#mode-8-create-test-accounts)
-- [Mode 9: Delete TEST Accounts](#mode-9-delete-test-accounts)
+- [Create TEST Accounts (New-TestKrbTgtAccount)](#create-test-accounts-new-testkrbtgtaccount)
+- [Delete TEST Accounts (Remove-TestKrbTgtAccount)](#delete-test-accounts-remove-testkrbtgtaccount)
 - [Advanced Usage](#advanced-usage)
 
 ---
@@ -280,9 +280,11 @@ Monitor domain for authentication issues
 
 ---
 
-## Mode 8: Create TEST Accounts
+## Create TEST Accounts (New-TestKrbTgtAccount)
 
 **Purpose:** Create TEST KrbTgt accounts (krbtgt_TEST and krbtgt_<Number>_TEST) for safe testing.
+
+**Note:** This is a separate function, not a mode of Reset-KrbTgtPassword.
 
 ### Basic Usage
 ```powershell
@@ -303,7 +305,7 @@ New-TestKrbTgtAccount -TargetDomain "contoso.com" -WhatIf
 **Output Example:**
 ```
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-CREATE TEST KRBTGT ACCOUNTS (MODE 8)...
+CREATE TEST KRBTGT ACCOUNTS...
 
 Do you really want to continue and create TEST KrbTgt accounts? [CONTINUE | STOP]: CONTINUE
 
@@ -335,9 +337,11 @@ All TEST KrbTgt accounts have been processed.
 
 ---
 
-## Mode 9: Delete TEST Accounts
+## Delete TEST Accounts (Remove-TestKrbTgtAccount)
 
-**Purpose:** Remove all TEST KrbTgt accounts created by Mode 8.
+**Purpose:** Remove all TEST KrbTgt accounts created by New-TestKrbTgtAccount.
+
+**Note:** This is a separate function, not a mode of Reset-KrbTgtPassword.
 
 ### Basic Usage
 ```powershell
@@ -358,7 +362,7 @@ Remove-TestKrbTgtAccount -TargetDomain "contoso.com" -WhatIf
 **Output Example:**
 ```
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-CLEANUP TEST KRBTGT ACCOUNTS (MODE 9)...
+CLEANUP TEST KRBTGT ACCOUNTS...
 
 Do you really want to continue and delete TEST KrbTgt accounts? [CONTINUE | STOP]: CONTINUE
 
@@ -470,13 +474,18 @@ Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope Specific
 
 All operations are automatically logged to:
 ```
-$env:TEMP\Reset-KrbTgt-Password_<Timestamp>.log
+<ModulePublicFolder>\<YYYY-MM-DD_HH.mm.ss>_<COMPUTERNAME>_Reset-KrbTgtPassword.log
 ```
 
-To view the log file after execution:
+Example:
+```
+C:\...\Reset-KrbTgtPassword\Public\2025-10-22_10.25.59_ADCSGOAT-PAW_Reset-KrbTgtPassword.log
+```
+
+The log file path is displayed at the end of each operation. To view it:
 ```powershell
-# The log path is displayed at the end of each operation
-notepad $Script:LogFilePath
+# The log path is shown in the final output
+# Look for: "Log file: C:\path\to\logfile.log"
 ```
 
 ---
@@ -486,7 +495,7 @@ notepad $Script:LogFilePath
 1. **Always test first:**
    - Use Mode 1 (Info) to understand the environment
    - Use Mode 2 (SimulateCanary) to test replication
-   - Create TEST accounts with Mode 8
+   - Create TEST accounts with New-TestKrbTgtAccount
    - Test with Mode 3/4 before production
 
 2. **Production resets:**

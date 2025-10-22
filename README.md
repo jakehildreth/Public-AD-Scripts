@@ -11,7 +11,7 @@ This PowerShell module provides comprehensive KrbTgt password reset capabilities
 
 ## What's New in v4.0
 - **✅ COMPLETE module restructuring** from monolithic 8,325-line script to modular architecture
-- **✅ All 9 operation modes implemented** (Info, Canary, TEST Sim, TEST Reset, PROD Sim, PROD Reset, Create TEST, Delete TEST)
+- **✅ All 6 operation modes implemented** plus 2 management functions (Info, Canary, TEST Sim, TEST Reset, PROD Sim, PROD Reset)
 - **✅ Improved maintainability** with separation of concerns across 42 files
 - **✅ Enhanced testability** with isolated, unit-testable functions (44 total)
 - **✅ Better code reusability** with public/private API separation
@@ -23,14 +23,14 @@ This PowerShell module provides comprehensive KrbTgt password reset capabilities
 
 ```
 Reset-KrbTgtPassword/
-├── Reset-KrbTgtPassword.psd1          # Module manifest
-├── Reset-KrbTgtPassword.psm1          # Root module file
-├── README.md                           # This file
-├── Public/                             # Exported functions
-│   ├── Reset-KrbTgtPassword.ps1       # Main orchestration function (Modes 1-6)
-│   ├── New-TestKrbTgtAccount.ps1      # Create test accounts (Mode 8)
-│   └── Remove-TestKrbTgtAccount.ps1   # Remove test accounts (Mode 9)
-├── Private/                            # Internal helper functions
+├── Reset-KrbTgtPassword.psd1            # Module manifest
+├── Reset-KrbTgtPassword.psm1            # Root module file
+├── README.md                            # This file
+├── Public/                              # Exported functions
+│   ├── Reset-KrbTgtPassword.ps1         # Main orchestration function (Modes 1-6)
+│   ├── New-TestKrbTgtAccount.ps1        # Create test accounts (Mode 8)
+│   └── Remove-TestKrbTgtAccount.ps1     # Remove test accounts (Mode 9)
+├── Private/                             # Internal helper functions
 │   ├── Utilities/
 │   │   ├── Write-Log.ps1
 │   │   ├── Test-PortConnection.ps1
@@ -120,16 +120,23 @@ Reset-KrbTgtPassword `
 
 ## Operation Modes
 
-| Mode | Function Parameter | Description | Impact |
-|------|-------------------|-------------|---------|
+### Reset-KrbTgtPassword Modes
+
+| Mode | Parameter Value | Description | Impact |
+|------|----------------|-------------|---------|
 | **1** | `Info` | Informational analysis only | None |
 | **2** | `SimulateCanary` | Test replication with temp canary object | Minimal |
 | **3** | `SimulateTest` | Simulate with TEST accounts (WhatIf) | None |
 | **4** | `ResetTest` | Reset TEST account passwords | TEST accounts only |
 | **5** | `SimulateProd` | Simulate with PROD accounts (WhatIf) | None |
 | **6** | `ResetProd` | Reset PRODUCTION account passwords | **LIVE IMPACT** |
-| **8** | `New-TestKrbTgtAccount` | Create TEST/BOGUS accounts | Creates test accounts |
-| **9** | `Remove-TestKrbTgtAccount` | Remove TEST/BOGUS accounts | Removes test accounts |
+
+### Test Account Management Functions
+
+| Function | Description | Impact |
+|----------|-------------|--------|
+| `New-TestKrbTgtAccount` | Create TEST/BOGUS accounts | Creates test accounts |
+| `Remove-TestKrbTgtAccount` | Remove TEST/BOGUS accounts | Removes test accounts |
 
 ## Public Functions
 
@@ -138,13 +145,11 @@ Main function that orchestrates all KrbTgt password reset operations.
 
 **Parameters:**
 - `Mode` - Operation mode (Info, SimulateCanary, SimulateTest, ResetTest, SimulateProd, ResetProd)
-- `TargetForest` - FQDN of target AD forest
 - `TargetDomain` - FQDN of target AD domain
 - `Scope` - Target scope (AllRWDCs, AllRODCs, SpecificRODCs)
 - `TargetRODCs` - Array of RODC FQDNs (when Scope is SpecificRODCs)
-- `Credential` - PSCredential for remote forest access
+- `Credential` - PSCredential for remote domain access
 - `SendEmailReport` - Send log file via email
-- `SkipInfo` - Skip informational text at startup
 - `ContinueOnWarning` - Continue without confirmation prompts
 
 ### New-TestKrbTgtAccount
