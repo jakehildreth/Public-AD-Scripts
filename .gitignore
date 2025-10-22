@@ -1,6 +1,6 @@
 # Log Files
 *.log
-*_Reset-KrbTgtPassword.log
+*_Reset-KrbtgtPassword.log
 
 # PowerShell Module Cache
 *.psm1.cache

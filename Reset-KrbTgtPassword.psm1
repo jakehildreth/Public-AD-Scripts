@@ -101,7 +101,10 @@ Get-ChildItem -Path "$PSScriptRoot\Public\*.ps1" -ErrorAction SilentlyContinue |
 Export-ModuleMember -Function @(
     'Reset-KrbTgtPassword',
     'New-TestKrbTgtAccount',
-    'Remove-TestKrbTgtAccount'
+    'Remove-TestKrbTgtAccount',
+    'Get-KrbTgtInfo',
+    'Test-ADReplication',
+    'Invoke-KrbTgtPasswordReset'
 )
 
 Write-Verbose "Reset-KrbTgtPassword module loaded successfully"
