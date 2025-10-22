@@ -89,6 +89,12 @@ function Reset-KrbTgtPassword {
     begin {
         Write-Verbose "Reset-KrbTgtPassword: BEGIN block"
         
+        # Initialize log file path
+        $execDateTime = Get-Date -Format "yyyy-MM-dd_HH.mm.ss"
+        $computerName = $env:COMPUTERNAME
+        $logFileName = "$execDateTime`_$computerName`_Reset-KrbTgtPassword.log"
+        $Script:LogFilePath = Join-Path -Path $PSScriptRoot -ChildPath $logFileName
+        
         # Display header
         Write-Log -Message "===========================================================================" -Level MAINHEADER
         Write-Log -Message "" -Level MAINHEADER
@@ -104,10 +110,11 @@ function Reset-KrbTgtPassword {
             throw "Elevation required"
         }
         
-        # Test PowerShell modules
-        $modulesOK = Test-PowerShellModules
-        if (-not $modulesOK) {
-            Write-Log -Message "Required modules could not be loaded" -Level WARNING
+        # Test PowerShell modules - ActiveDirectory is required
+        $modulesOK = Test-PowerShellModules -ModuleName "ActiveDirectory"
+        if ($modulesOK -eq "NotAvailable") {
+            Write-Log -Message "Required ActiveDirectory module could not be loaded" -Level ERROR
+            throw "Required module not available"
         }
         
         # Determine if local or remote domain
@@ -227,7 +234,7 @@ function Reset-KrbTgtPassword {
                     Write-Log -Message "" -Level INFO
                     
                     # Display DC Information
-                    Write-Log -Message "Domain Controllers in $TargetDomain`:" -Level SUBHEADER
+                    Write-Log -Message "Domain Controllers in $TargetDomain`:" -Level HEADER
                     Write-Log -Message "" -Level INFO
                     
                     foreach ($dc in $dcList) {
@@ -286,11 +293,15 @@ function Reset-KrbTgtPassword {
                     Write-Log -Message "CANARY SIMULATION MODE - Testing replication with temporary object" -Level HEADER
                     Write-Log -Message "" -Level INFO
                     
+                    # Create timestamp for canary object
+                    $execDateTime = Get-Date -Format "yyyyMMddHHmmss"
+                    
                     # Create canary object
                     Write-Log -Message "Creating temporary canary object..." -Level INFO
                     $canaryDN = New-TemporaryCanaryObject `
                         -TargetedADDomainRWDCFQDN $targetRWDCFQDN `
                         -KrbTgtSamAccountName "krbtgt" `
+                        -ExecDateTimeCustom $execDateTime `
                         -LocalADForest $localADForest `
                         -AdminCredentials $adminCreds
                     
@@ -300,9 +311,12 @@ function Reset-KrbTgtPassword {
                         
                         # Monitor replication
                         Write-Log -Message "Monitoring replication convergence..." -Level INFO
+                        $dcFQDNs = $dcList | ForEach-Object { $_.HostName }
                         $replicationResult = Test-ADReplicationConvergence `
+                            -DomainFQDN $TargetDomain `
                             -ObjectDN $canaryDN `
-                            -DomainControllers $dcList `
+                            -DomainControllers $dcFQDNs `
+                            -IsLocalForest $localADForest `
                             -Credential $adminCreds `
                             -MaxWaitMinutes 30
                         
@@ -322,7 +336,7 @@ function Reset-KrbTgtPassword {
                         Write-Log -Message "Removing canary object..." -Level INFO
                         Remove-TemporaryCanaryObject `
                             -TargetedADDomainRWDCFQDN $targetRWDCFQDN `
-                            -ObjectToRemove $canaryDN `
+                            -TargetObjectToCheckDN $canaryDN `
                             -LocalADForest $localADForest `
                             -AdminCredentials $adminCreds
                     }
@@ -422,8 +436,9 @@ function Reset-KrbTgtPassword {
                         Write-Log -Message "Resetting krbtgt_TEST password..." -Level INFO
                         
                         $resetResult = Set-KrbTgtPassword `
-                            -TargetDC $targetRWDCFQDN `
-                            -KrbTgtAccountName "krbtgt_TEST" `
+                            -TargetedDomainRWDCFQDN $targetRWDCFQDN `
+                            -KrbTgtSamAccountName "krbtgt_TEST" `
+                            -IsLocalForest $localADForest `
                             -Credential $adminCreds
                         
                         if ($resetResult.Success) {
@@ -431,17 +446,8 @@ function Reset-KrbTgtPassword {
                             Write-Log -Message "Previous password set: $($resetResult.PreviousPwdSet)" -Level INFO
                             Write-Log -Message "New password set: $($resetResult.NewPwdSet)" -Level INFO
                             
-                            # Force replication
-                            Write-Log -Message "Forcing replication..." -Level INFO
-                            $rwdcs = $dcList | Where-Object { $_.IsRODC -eq $false -and $_.HostName -ne $targetRWDCFQDN }
-                            foreach ($rwdc in $rwdcs) {
-                                Invoke-ADReplication `
-                                    -SourceDC $targetRWDCFQDN `
-                                    -TargetDC $rwdc.HostName `
-                                    -ObjectDN $resetResult.DN `
-                                    -ReplicationType Full `
-                                    -Credential $adminCreds
-                            }
+                            # Note: AD will replicate automatically, monitoring convergence below
+                            Write-Log -Message "Waiting for automatic AD replication..." -Level INFO
                         } else {
                             Write-Log -Message "Password reset failed" -Level ERROR
                         }
@@ -489,13 +495,8 @@ function Reset-KrbTgtPassword {
                                         if ($resetResult.Success) {
                                             Write-Log -Message "Password reset successful" -Level SUCCESS
                                             
-                                            # Replicate secrets to RODC
-                                            Invoke-ADReplication `
-                                                -SourceDC $targetRWDCFQDN `
-                                                -TargetDC $rodc.HostName `
-                                                -ObjectDN $resetResult.DN `
-                                                -ReplicationType SecretsOnly `
-                                                -Credential $adminCreds
+                                            # Note: AD will replicate secrets to RODC automatically
+                                            Write-Log -Message "Waiting for automatic secret replication to RODC..." -Level INFO
                                         } else {
                                             Write-Log -Message "Password reset failed" -Level ERROR
                                         }
@@ -623,8 +624,9 @@ function Reset-KrbTgtPassword {
                         Write-Log -Message "Resetting krbtgt password..." -Level WARNING
                         
                         $resetResult = Set-KrbTgtPassword `
-                            -TargetDC $targetRWDCFQDN `
-                            -KrbTgtAccountName "krbtgt" `
+                            -TargetedDomainRWDCFQDN $targetRWDCFQDN `
+                            -KrbTgtSamAccountName "krbtgt" `
+                            -IsLocalForest $localADForest `
                             -Credential $adminCreds
                         
                         if ($resetResult.Success) {
@@ -632,23 +634,18 @@ function Reset-KrbTgtPassword {
                             Write-Log -Message "Previous password set: $($resetResult.PreviousPwdSet)" -Level INFO
                             Write-Log -Message "New password set: $($resetResult.NewPwdSet)" -Level INFO
                             
-                            # Force replication
-                            Write-Log -Message "Forcing replication to all RWDCs..." -Level INFO
-                            $rwdcs = $dcList | Where-Object { $_.IsRODC -eq $false -and $_.HostName -ne $targetRWDCFQDN }
-                            foreach ($rwdc in $rwdcs) {
-                                Invoke-ADReplication `
-                                    -SourceDC $targetRWDCFQDN `
-                                    -TargetDC $rwdc.HostName `
-                                    -ObjectDN $resetResult.DN `
-                                    -ReplicationType Full `
-                                    -Credential $adminCreds
-                            }
+                            # Note: AD will replicate automatically
+                            Write-Log -Message "Waiting for automatic AD replication..." -Level INFO
                             
                             # Monitor convergence
                             Write-Log -Message "Monitoring replication convergence..." -Level INFO
+                            $dcFQDNs = $dcList | ForEach-Object { $_.HostName }
                             $replicationResult = Test-ADReplicationConvergence `
-                                -ObjectDN $resetResult.DN `
-                                -DomainControllers $dcList `
+                                -DomainFQDN $TargetDomain `
+                                -ObjectDN $resetResult.DistinguishedName `
+                                -DomainControllers $dcFQDNs `
+                                -AttributeName "pwdLastSet" `
+                                -IsLocalForest $localADForest `
                                 -Credential $adminCreds `
                                 -MaxWaitMinutes 30
                             
@@ -703,13 +700,8 @@ function Reset-KrbTgtPassword {
                                         if ($resetResult.Success) {
                                             Write-Log -Message "Password reset successful" -Level SUCCESS
                                             
-                                            # Replicate secrets to RODC
-                                            Invoke-ADReplication `
-                                                -SourceDC $targetRWDCFQDN `
-                                                -TargetDC $rodc.HostName `
-                                                -ObjectDN $resetResult.DN `
-                                                -ReplicationType SecretsOnly `
-                                                -Credential $adminCreds
+                                            # Note: AD will replicate secrets to RODC automatically
+                                            Write-Log -Message "Waiting for automatic secret replication to RODC..." -Level INFO
                                         } else {
                                             Write-Log -Message "Password reset FAILED" -Level ERROR
                                         }

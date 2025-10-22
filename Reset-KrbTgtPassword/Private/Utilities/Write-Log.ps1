@@ -29,6 +29,7 @@ function Write-Log {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
+        [AllowEmptyString()]
         [string]$Message,
         
         [Parameter()]

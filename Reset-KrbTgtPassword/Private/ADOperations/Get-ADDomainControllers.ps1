@@ -64,13 +64,19 @@ Function Get-ADDomainControllers {
 
             # Get RWDCs
             foreach ($dc in $domain.DomainControllers) {
+                $roles = @($dc.Roles)
+                $isPDC = $roles -contains 'PdcRole'
+                
                 $allDCs += [PSCustomObject]@{
                     Name = $dc.Name
+                    HostName = $dc.Name
                     SiteName = $dc.SiteName
                     IPAddress = $dc.IPAddress
                     IsReadOnly = $false
+                    IsRODC = $false
+                    IsPDC = $isPDC
                     OSVersion = $dc.OSVersion
-                    Roles = @($dc.Roles)
+                    Roles = $roles
                 }
             }
 
@@ -79,9 +85,12 @@ Function Get-ADDomainControllers {
                 foreach ($rodc in $domain.FindAllDiscoverableReadOnlyDomainControllers()) {
                     $allDCs += [PSCustomObject]@{
                         Name = $rodc.Name
+                        HostName = $rodc.Name
                         SiteName = $rodc.SiteName
                         IPAddress = $rodc.IPAddress
                         IsReadOnly = $true
+                        IsRODC = $true
+                        IsPDC = $false
                         OSVersion = $rodc.OSVersion
                         Roles = @()
                     }

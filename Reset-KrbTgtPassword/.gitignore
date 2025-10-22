@@ -1,0 +1,17 @@
+# Log Files
+*.log
+*_Reset-KrbTgtPassword.log
+
+# PowerShell Module Cache
+*.psm1.cache
+
+# VS Code Settings (keep template)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# OS Files
+.DS_Store
+Thumbs.db

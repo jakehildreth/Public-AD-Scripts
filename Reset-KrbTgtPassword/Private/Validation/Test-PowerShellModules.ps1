@@ -65,12 +65,12 @@ Function Test-PowerShellModules {
                 If (@(Get-Module -ListAvailable | Where-Object{$_.Name -eq $ModuleName}).Count -ne 0) {
                     # Module available, import it
                     Import-Module $ModuleName
-                    Write-Log -Message "PoSH Module '$ModuleName' Has Been Loaded..." -Level SUCCESS -IgnoreRemote $IgnoreRemote
+                    Write-Log -Message "PoSH Module '$ModuleName' Has Been Loaded..." -Level SUCCESS
                     $retValue = "HasBeenLoaded"
                 } Else {
                     # Module not available
-                    Write-Log -Message "PoSH Module '$ModuleName' Is Not Available To Load..." -Level ERROR -IgnoreRemote $IgnoreRemote
-                    Write-Log -Message "The PoSH Module '$ModuleName' Is Required For This Script To Work..." -Level REMARK -IgnoreRemote $IgnoreRemote
+                    Write-Log -Message "PoSH Module '$ModuleName' Is Not Available To Load..." -Level ERROR
+                    Write-Log -Message "The PoSH Module '$ModuleName' Is Required For This Script To Work..." -Level REMARK
                     
                     $confirmInstallPoshModuleYESNO = $null
                     $confirmInstallPoshModuleYESNO = Read-Host "Would You Like To Install The PoSH Module '$ModuleName' NOW? [Yes|No]"
@@ -78,28 +78,28 @@ Function Test-PowerShellModules {
                     If ($confirmInstallPoshModuleYESNO.ToUpper() -eq "YES" -Or $confirmInstallPoshModuleYESNO.ToUpper() -eq "Y") {
                         # User confirmed installation
                         If ($ModuleName -eq "GroupPolicy") {
-                            Write-Log -Message "Installing The Windows Feature 'GPMC' For The PoSH Module '$ModuleName'..." -Level REMARK -IgnoreRemote $IgnoreRemote
+                            Write-Log -Message "Installing The Windows Feature 'GPMC' For The PoSH Module '$ModuleName'..." -Level REMARK
                             Add-WindowsFeature -Name "GPMC" -IncludeAllSubFeature | Out-Null
                         }
                         
                         # Check if module is now available after installation
                         If (@(Get-Module -ListAvailable | Where-Object{$_.Name -eq $ModuleName}).Count -ne 0) {
                             Import-Module $ModuleName
-                            Write-Log -Message "PoSH Module '$ModuleName' Has Been Loaded..." -Level SUCCESS -IgnoreRemote $IgnoreRemote
+                            Write-Log -Message "PoSH Module '$ModuleName' Has Been Loaded..." -Level SUCCESS
                             $retValue = "HasBeenLoaded"
                         } Else {
-                            Write-Log -Message "Aborting Script..." -Level ERROR -IgnoreRemote $IgnoreRemote
+                            Write-Log -Message "Aborting Script..." -Level ERROR
                             $retValue = "NotAvailable"
                         }
                     } Else {
                         # User declined installation
-                        Write-Log -Message "Aborting Script..." -Level ERROR -IgnoreRemote $IgnoreRemote
+                        Write-Log -Message "Aborting Script..." -Level ERROR
                         $retValue = "NotAvailable"
                     }
                 }
             } Else {
                 # Module already loaded
-                Write-Log -Message "PoSH Module '$ModuleName' Already Loaded..." -Level SUCCESS -IgnoreRemote $IgnoreRemote
+                Write-Log -Message "PoSH Module '$ModuleName' Already Loaded..." -Level SUCCESS
                 $retValue = "AlreadyLoaded"
             }
             
