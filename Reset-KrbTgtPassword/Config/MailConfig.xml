@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resetKrbTgtPassword xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<!-- ====================================================================== -->
+	<!-- SMTP SERVER CONFIGURATION -->
+	<!-- ====================================================================== -->
+	
+	<!-- FQDN Of The Mail Server Or Mail Relay -->
+	<smtpServer>mail.company.com</smtpServer>
+
+	<!-- SMTP Port To Use (typically 25, 587, or 465) -->
+	<smtpPort>587</smtpPort>
+
+	<!-- SSL FOR SMTP - TRUE OR FALSE -->
+	<useSSLForSMTP>true</useSSLForSMTP>
+
+	<!-- ====================================================================== -->
+	<!-- SMTP AUTHENTICATION (Leave empty if not required) -->
+	<!-- ====================================================================== -->
+	
+	<!-- SMTP Credentials To Use - UserName/Password -->
+	<!-- Leave empty if no authentication is required -->
+	<smtpCredsUserName></smtpCredsUserName>
+	<smtpCredsPassword></smtpCredsPassword>
+
+	<!-- ====================================================================== -->
+	<!-- EMAIL MESSAGE CONFIGURATION -->
+	<!-- ====================================================================== -->
+	
+	<!-- Mail Subject To Use -->
+	<mailSubject>KrbTgt Password Reset Result</mailSubject>
+
+	<!-- The Priority Of The Message: Low, Normal, High -->
+	<mailPriority>High</mailPriority>
+
+	<!-- Mail Body To Use (HTML Format) -->
+	<mailBody>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;KrbTgt Password Reset Report&lt;/title&gt;
+&lt;style type="text/css"&gt;
+body { font-family: Arial, sans-serif; }
+.header { font-size: 24pt; color: red; font-weight: bold; text-align: center; }
+.info { font-size: 12pt; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class="header"&gt;!!! ATTENTION | FYI - ACTION REQUIRED !!!&lt;/div&gt;
+&lt;hr&gt;
+&lt;br&gt;
+&lt;p class="info"&gt;Hello,&lt;/p&gt;
+&lt;br&gt;
+&lt;p class="info"&gt;The KrbTgt password reset operation has completed.&lt;/p&gt;
+&lt;p class="info"&gt;Please review the attached log file for detailed results.&lt;/p&gt;
+&lt;br&gt;
+&lt;p class="info"&gt;Best regards,&lt;br&gt;Active Directory Operations&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+	</mailBody>
+
+	<!-- ====================================================================== -->
+	<!-- EMAIL RECIPIENTS -->
+	<!-- ====================================================================== -->
+	
+	<!-- The SMTP Address Used In The FROM Field -->
+	<mailFromSender>ad-operations@company.com</mailFromSender>
+
+	<!-- The SMTP Address Used In The TO Field -->
+	<mailToRecipient>it-admins@company.com</mailToRecipient>
+
+	<!-- The SMTP Addresses Used In The CC Field -->
+	<!-- Add one <mailCcRecipient> entry per CC recipient -->
+	<mailCcRecipients>
+		<mailCcRecipient>security-team@company.com</mailCcRecipient>
+		<!-- Add more CC recipients as needed -->
+		<!-- <mailCcRecipient>another-recipient@company.com</mailCcRecipient> -->
+	</mailCcRecipients>
+
+	<!-- ====================================================================== -->
+	<!-- S/MIME SIGNING AND ENCRYPTION (Optional) -->
+	<!-- ====================================================================== -->
+	
+	<!-- Enable/Disable SMIME signing and encryption of emails: ON or OFF -->
+	<mailSign>OFF</mailSign>
+	<mailEncrypt>OFF</mailEncrypt>
+
+	<!-- Full path of Cpi.Net.SecureMail.dll -->
+	<!-- Required only if mailSign or mailEncrypt is ON -->
+	<!-- DLL Source Code: https://www.codeproject.com/Articles/41727/An-S-MIME-Library-for-Sending-Signed-and-Encrypted -->
+	<!-- You must compile this DLL yourself after reviewing the source code -->
+	<mailSignAndEncryptDllFile>C:\Path\To\Cpi.Net.SecureMail.dll</mailSignAndEncryptDllFile>
+
+	<!-- ====================================================================== -->
+	<!-- CERTIFICATE CONFIGURATION FOR SIGNING/ENCRYPTION -->
+	<!-- ====================================================================== -->
+	
+	<!-- Location Of Certificate To Sign/Encrypt The Mail -->
+	<!-- Options: STORE (Windows Certificate Store) or PFX (PFX file) -->
+	<mailSignAndEncryptCertLocation>STORE</mailSignAndEncryptCertLocation>
+	
+	<!-- Location Of Certificate To Encrypt The Mail for Recipient -->
+	<!-- Options: STORE (Windows Certificate Store) or CER (CER file) -->
+	<mailEncryptCertLocation>STORE</mailEncryptCertLocation>
+
+	<!-- ====================================================================== -->
+	<!-- CERTIFICATE THUMBPRINTS (When using STORE location) -->
+	<!-- ====================================================================== -->
+	
+	<!-- Thumbprint Of Certificate To Sign/Encrypt Mail With -->
+	<!-- Only used when mailSignAndEncryptCertLocation is STORE -->
+	<!-- To find thumbprint: Get-ChildItem Cert:\CurrentUser\My -->
+	<mailSignAndEncryptCertThumbprint></mailSignAndEncryptCertThumbprint>
+	
+	<!-- Thumbprint Of Certificate To Encrypt The Mail For Recipient -->
+	<!-- Only used when mailEncryptCertLocation is STORE -->
+	<mailEncryptCertThumbprint></mailEncryptCertThumbprint>
+
+	<!-- ====================================================================== -->
+	<!-- CERTIFICATE FILES (When using PFX/CER location) -->
+	<!-- ====================================================================== -->
+	
+	<!-- Full path of a .pfx certificate file used to sign/encrypt the email message -->
+	<!-- Only used when mailSignAndEncryptCertLocation is PFX -->
+	<mailSignAndEncryptCertPFXFile>C:\Path\To\SigningCert.pfx</mailSignAndEncryptCertPFXFile>
+	
+	<!-- Full path of a .cer certificate file used to encrypt the email message -->
+	<!-- Only used when mailEncryptCertLocation is CER -->
+	<mailEncryptCertCERFile>C:\Path\To\EncryptionCert.cer</mailEncryptCertCERFile>
+
+	<!-- The password for the .pfx certificate file -->
+	<!-- Only used when mailSignAndEncryptCertLocation is PFX -->
+	<mailSignAndEncryptCertPFXPassword></mailSignAndEncryptCertPFXPassword>
+
+</resetKrbTgtPassword>
