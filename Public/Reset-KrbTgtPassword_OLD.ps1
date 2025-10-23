@@ -1,10 +1,10 @@
-function Reset-KrbTgtPassword {
+function Reset-KrbtgtPassword {
     <#
     .SYNOPSIS
-        Resets KrbTgt account password for RWDCs and/or RODCs in Active Directory
+        Resets Krbtgt account password for RWDCs and/or RODCs in Active Directory
     
     .DESCRIPTION
-        Main orchestration function for KrbTgt password reset operations.
+        Main orchestration function for Krbtgt password reset operations.
         Supports multiple operation modes for testing and production password resets.
         
         Operation Modes:
@@ -25,7 +25,7 @@ function Reset-KrbTgtPassword {
         FQDN of target Active Directory domain
     
     .PARAMETER Scope
-        Scope of KrbTgt accounts to target (AllRWDCs, AllRODCs, SpecificRODCs)
+        Scope of Krbtgt accounts to target (AllRWDCs, AllRODCs, SpecificRODCs)
     
     .PARAMETER TargetRODCs
         Array of RODC FQDNs when Scope is SpecificRODCs
@@ -43,19 +43,19 @@ function Reset-KrbTgtPassword {
         Continue without confirmation prompts (for automated runs)
     
     .EXAMPLE
-        Reset-KrbTgtPassword -Mode Info -TargetDomain "contoso.com"
+        Reset-KrbtgtPassword -Mode Info -TargetDomain "contoso.com"
         
         Runs informational mode to analyze the environment without making changes
     
     .EXAMPLE
-        Reset-KrbTgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
+        Reset-KrbtgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
         
         Tests replication by creating and monitoring a temporary canary object
     
     .EXAMPLE
-        Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -Confirm
+        Reset-KrbtgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -Confirm
         
-        Resets the production KrbTgt password for all RWDCs (LIVE IMPACT!)
+        Resets the production Krbtgt password for all RWDCs (LIVE IMPACT!)
     
     .NOTES
         Requires:
@@ -103,7 +103,7 @@ function Reset-KrbTgtPassword {
     )
     
     begin {
-        Write-Verbose "Reset-KrbTgtPassword: BEGIN block"
+        Write-Verbose "Reset-KrbtgtPassword: BEGIN block"
         
         # TODO: Extract from original script lines ~5300-5500
         # - Initialize log file
@@ -114,7 +114,7 @@ function Reset-KrbTgtPassword {
         
         Write-Log -Message "===========================================================================" -Level MAINHEADER
         Write-Log -Message "" -Level MAINHEADER
-        Write-Log -Message "               Reset KrbTgt Password For RWDCs And RODCs" -Level MAINHEADER
+        Write-Log -Message "               Reset Krbtgt Password For RWDCs And RODCs" -Level MAINHEADER
         Write-Log -Message "                          Version 4.0.0" -Level MAINHEADER
         Write-Log -Message "" -Level MAINHEADER
         Write-Log -Message "===========================================================================" -Level MAINHEADER
@@ -132,7 +132,7 @@ function Reset-KrbTgtPassword {
     }
     
     process {
-        Write-Verbose "Reset-KrbTgtPassword: PROCESS block"
+        Write-Verbose "Reset-KrbtgtPassword: PROCESS block"
         
         try {
             # TODO: Extract from original script lines ~5500-7800
@@ -143,10 +143,10 @@ function Reset-KrbTgtPassword {
                 Write-Log -Message "Please select operation mode:" -Level HEADER
                 Write-Log -Message "  1 - Informational Mode (No Changes)" -Level INFO
                 Write-Log -Message "  2 - Simulation Mode | Temporary Canary Object" -Level INFO
-                Write-Log -Message "  3 - Simulation Mode | TEST KrbTgt Accounts (WhatIf)" -Level INFO
-                Write-Log -Message "  4 - Real Reset Mode | TEST KrbTgt Accounts" -Level INFO
-                Write-Log -Message "  5 - Simulation Mode | PROD KrbTgt Accounts (WhatIf)" -Level INFO
-                Write-Log -Message "  6 - Real Reset Mode | PROD KrbTgt Accounts (LIVE IMPACT!)" -Level INFO
+                Write-Log -Message "  3 - Simulation Mode | TEST Krbtgt Accounts (WhatIf)" -Level INFO
+                Write-Log -Message "  4 - Real Reset Mode | TEST Krbtgt Accounts" -Level INFO
+                Write-Log -Message "  5 - Simulation Mode | PROD Krbtgt Accounts (WhatIf)" -Level INFO
+                Write-Log -Message "  6 - Real Reset Mode | PROD Krbtgt Accounts (LIVE IMPACT!)" -Level INFO
                 Write-Log -Message "" -Level INFO
                 
                 # TODO: Prompt for mode selection and map to $Mode parameter
@@ -195,7 +195,7 @@ function Reset-KrbTgtPassword {
                     # TODO: Extract Mode 1 logic from original script
                     # - Retrieve DC information
                     # - Display DC inventory
-                    # - Show KrbTgt account info
+                    # - Show Krbtgt account info
                     # - Test connectivity
                     # - Display replication topology
                     Write-Log -Message "Informational mode - analyzing environment" -Level INFO
@@ -212,7 +212,7 @@ function Reset-KrbTgtPassword {
                 
                 'SimulateTest' {
                     # TODO: Extract Mode 3 logic from original script
-                    # - Identify TEST KrbTgt accounts
+                    # - Identify TEST Krbtgt accounts
                     # - Simulate password reset (WhatIf)
                     # - Check replication status
                     # - Report what would happen
@@ -221,20 +221,20 @@ function Reset-KrbTgtPassword {
                 
                 'ResetTest' {
                     # TODO: Extract Mode 4 logic from original script
-                    # - Identify TEST KrbTgt accounts
+                    # - Identify TEST Krbtgt accounts
                     # - Reset passwords
                     # - Monitor replication
                     # - Report results
                     Write-Log -Message "TEST account reset mode" -Level INFO
                     
-                    if ($PSCmdlet.ShouldProcess("TEST KrbTgt accounts", "Reset password")) {
+                    if ($PSCmdlet.ShouldProcess("TEST Krbtgt accounts", "Reset password")) {
                         # Actual reset logic here
                     }
                 }
                 
                 'SimulateProd' {
                     # TODO: Extract Mode 5 logic from original script
-                    # - Identify PROD KrbTgt accounts
+                    # - Identify PROD Krbtgt accounts
                     # - Simulate password reset (WhatIf)
                     # - Check replication status
                     # - Report what would happen
@@ -243,14 +243,14 @@ function Reset-KrbTgtPassword {
                 
                 'ResetProd' {
                     # TODO: Extract Mode 6 logic from original script
-                    # - Identify PROD KrbTgt accounts
+                    # - Identify PROD Krbtgt accounts
                     # - CRITICAL: Confirm operation
                     # - Reset passwords
                     # - Monitor replication
                     # - Report results
                     Write-Log -Message "PROD account reset mode - LIVE IMPACT!" -Level WARNING
                     
-                    if ($PSCmdlet.ShouldProcess("PRODUCTION KrbTgt accounts", "Reset password")) {
+                    if ($PSCmdlet.ShouldProcess("PRODUCTION Krbtgt accounts", "Reset password")) {
                         # WARNING: This will have domain-wide impact!
                         # Actual reset logic here
                     }
@@ -265,7 +265,7 @@ function Reset-KrbTgtPassword {
     }
     
     end {
-        Write-Verbose "Reset-KrbTgtPassword: END block"
+        Write-Verbose "Reset-KrbtgtPassword: END block"
         
         # TODO: Extract from original script lines ~7800-8000
         # - Send email report if requested

@@ -1,4 +1,4 @@
-# Reset-KrbTgtPassword Module - Usage Examples
+# Reset-KrbtgtPassword Module - Usage Examples
 
 ## Table of Contents
 - [Module Import](#module-import)
@@ -8,8 +8,8 @@
 - [Mode 4: TEST Reset](#mode-4-test-reset)
 - [Mode 5: PROD Simulation](#mode-5-prod-simulation)
 - [Mode 6: PROD Reset](#mode-6-prod-reset)
-- [Create TEST Accounts (New-TestKrbTgtAccount)](#create-test-accounts-new-testkrbtgtaccount)
-- [Delete TEST Accounts (Remove-TestKrbTgtAccount)](#delete-test-accounts-remove-testkrbtgtaccount)
+- [Create TEST Accounts (New-TestKrbtgtAccount)](#create-test-accounts-new-testkrbtgtaccount)
+- [Delete TEST Accounts (Remove-TestKrbtgtAccount)](#delete-test-accounts-remove-testkrbtgtaccount)
 - [Advanced Usage](#advanced-usage)
 
 ---
@@ -18,46 +18,46 @@
 
 ```powershell
 # Import the module
-Import-Module "C:\Path\To\Reset-KrbTgtPassword\Reset-KrbTgtPassword.psd1"
+Import-Module "C:\Path\To\Reset-KrbtgtPassword\Reset-KrbtgtPassword.psd1"
 
 # Verify module loaded
-Get-Module Reset-KrbTgtPassword
+Get-Module Reset-KrbtgtPassword
 
 # Check available commands
-Get-Command -Module Reset-KrbTgtPassword
+Get-Command -Module Reset-KrbtgtPassword
 ```
 
 **Output:**
 ```
 CommandType     Name                           Version    Source
 -----------     ----                           -------    ------
-Function        New-TestKrbTgtAccount          4.0.0      Reset-KrbTgtPassword
-Function        Remove-TestKrbTgtAccount       4.0.0      Reset-KrbTgtPassword
-Function        Reset-KrbTgtPassword           4.0.0      Reset-KrbTgtPassword
+Function        New-TestKrbtgtAccount          4.0.0      Reset-KrbtgtPassword
+Function        Remove-TestKrbtgtAccount       4.0.0      Reset-KrbtgtPassword
+Function        Reset-KrbtgtPassword           4.0.0      Reset-KrbtgtPassword
 ```
 
 ---
 
 ## Mode 1: Information
 
-**Purpose:** Gather information about domain controllers and KrbTgt accounts without making any changes.
+**Purpose:** Gather information about domain controllers and Krbtgt accounts without making any changes.
 
 ### Interactive Mode
 ```powershell
-Reset-KrbTgtPassword
+Reset-KrbtgtPassword
 # Select Mode: 1
 # Enter domain: contoso.com
 ```
 
 ### Automated Mode
 ```powershell
-Reset-KrbTgtPassword -Mode Info -TargetDomain "contoso.com"
+Reset-KrbtgtPassword -Mode Info -TargetDomain "contoso.com"
 ```
 
 ### With Remote Domain Credentials
 ```powershell
 $cred = Get-Credential
-Reset-KrbTgtPassword -Mode Info -TargetDomain "remote.domain.com" -Credential $cred
+Reset-KrbtgtPassword -Mode Info -TargetDomain "remote.domain.com" -Credential $cred
 ```
 
 **Output Example:**
@@ -71,7 +71,7 @@ Domain Controllers in contoso.com:
       Site: Default-First-Site-Name
       IP: 192.168.1.10
       OS: Windows Server 2022 Standard
-      KrbTgt Account: krbtgt
+      Krbtgt Account: krbtgt
       Password Last Set: 01/15/2024 10:30:00
 
   - DC02.contoso.com
@@ -79,14 +79,14 @@ Domain Controllers in contoso.com:
       Site: Default-First-Site-Name
       IP: 192.168.1.11
       OS: Windows Server 2022 Standard
-      KrbTgt Account: krbtgt
+      Krbtgt Account: krbtgt
 
   - RODC01.contoso.com
       Type: RODC
       Site: Branch-Site
       IP: 192.168.2.10
       OS: Windows Server 2019 Standard
-      KrbTgt Account: krbtgt_12345
+      Krbtgt Account: krbtgt_12345
       Password Last Set: 01/15/2024 10:30:00
 ```
 
@@ -98,12 +98,12 @@ Domain Controllers in contoso.com:
 
 ### Basic Usage
 ```powershell
-Reset-KrbTgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
 ```
 
 ### Interactive Mode
 ```powershell
-Reset-KrbTgtPassword
+Reset-KrbtgtPassword
 # Select Mode: 2
 # Enter domain: contoso.com
 # Select Scope: 1 (All RWDCs)
@@ -129,21 +129,21 @@ Canary object removed successfully
 
 ## Mode 3: TEST Simulation
 
-**Purpose:** Simulate password reset for TEST KrbTgt accounts without actually changing anything (WhatIf mode).
+**Purpose:** Simulate password reset for TEST Krbtgt accounts without actually changing anything (WhatIf mode).
 
 ### All RWDCs
 ```powershell
-Reset-KrbTgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope AllRWDCs
 ```
 
 ### All RODCs
 ```powershell
-Reset-KrbTgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope AllRODCs
+Reset-KrbtgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope AllRODCs
 ```
 
 ### Specific RODCs
 ```powershell
-Reset-KrbTgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope SpecificRODCs -TargetRODCs @("RODC01.contoso.com", "RODC02.contoso.com")
+Reset-KrbtgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope SpecificRODCs -TargetRODCs @("RODC01.contoso.com", "RODC02.contoso.com")
 ```
 
 **Output Example:**
@@ -163,21 +163,21 @@ Simulation complete (no changes made)
 
 ## Mode 4: TEST Reset
 
-**Purpose:** Actually reset passwords for TEST KrbTgt accounts (safe to test replication without affecting production).
+**Purpose:** Actually reset passwords for TEST Krbtgt accounts (safe to test replication without affecting production).
 
 ### Basic Usage
 ```powershell
-Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRWDCs
 ```
 
 ### With Confirmation Bypass (for automation)
 ```powershell
-Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRWDCs -ContinueOnWarning -Confirm:$false
+Reset-KrbtgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRWDCs -ContinueOnWarning -Confirm:$false
 ```
 
 ### All RODCs
 ```powershell
-Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRODCs
+Reset-KrbtgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRODCs
 ```
 
 **Output Example:**
@@ -201,16 +201,16 @@ TEST account password reset complete
 
 ## Mode 5: PROD Simulation
 
-**Purpose:** Simulate password reset for PRODUCTION KrbTgt accounts without actually changing anything (WhatIf mode).
+**Purpose:** Simulate password reset for PRODUCTION Krbtgt accounts without actually changing anything (WhatIf mode).
 
 ### All RWDCs
 ```powershell
-Reset-KrbTgtPassword -Mode SimulateProd -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateProd -TargetDomain "contoso.com" -Scope AllRWDCs
 ```
 
 ### All RODCs
 ```powershell
-Reset-KrbTgtPassword -Mode SimulateProd -TargetDomain "contoso.com" -Scope AllRODCs
+Reset-KrbtgtPassword -Mode SimulateProd -TargetDomain "contoso.com" -Scope AllRODCs
 ```
 
 **Output Example:**
@@ -231,7 +231,7 @@ Simulation complete (no changes made)
 
 ## Mode 6: PROD Reset
 
-**Purpose:** Reset PRODUCTION KrbTgt account passwords (⚠️ **LIVE DOMAIN IMPACT** ⚠️).
+**Purpose:** Reset PRODUCTION Krbtgt account passwords (⚠️ **LIVE DOMAIN IMPACT** ⚠️).
 
 ### ⚠️ WARNING
 This operation will:
@@ -242,12 +242,12 @@ This operation will:
 
 ### Basic Usage
 ```powershell
-Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs
 ```
 
 ### With Confirmation Bypass (for automation - USE WITH EXTREME CAUTION)
 ```powershell
-Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -ContinueOnWarning -Confirm:$false
+Reset-KrbtgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -ContinueOnWarning -Confirm:$false
 ```
 
 **Output Example:**
@@ -256,7 +256,7 @@ Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs
 !!! PRODUCTION RESET MODE - LIVE DOMAIN IMPACT !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-This will reset PRODUCTION KrbTgt account passwords!
+This will reset PRODUCTION Krbtgt account passwords!
 This will cause ALL Kerberos tickets to be invalidated!
 Users and services will need to re-authenticate!
 
@@ -280,26 +280,26 @@ Monitor domain for authentication issues
 
 ---
 
-## Create TEST Accounts (New-TestKrbTgtAccount)
+## Create TEST Accounts (New-TestKrbtgtAccount)
 
-**Purpose:** Create TEST KrbTgt accounts (krbtgt_TEST and krbtgt_<Number>_TEST) for safe testing.
+**Purpose:** Create TEST Krbtgt accounts (krbtgt_TEST and krbtgt_<Number>_TEST) for safe testing.
 
-**Note:** This is a separate function, not a mode of Reset-KrbTgtPassword.
+**Note:** This is a separate function, not a mode of Reset-KrbtgtPassword.
 
 ### Basic Usage
 ```powershell
-New-TestKrbTgtAccount -TargetDomain "contoso.com"
+New-TestKrbtgtAccount -TargetDomain "contoso.com"
 ```
 
 ### With Remote Domain Credentials
 ```powershell
 $cred = Get-Credential
-New-TestKrbTgtAccount -TargetDomain "remote.domain.com" -Credential $cred
+New-TestKrbtgtAccount -TargetDomain "remote.domain.com" -Credential $cred
 ```
 
 ### With WhatIf (preview only)
 ```powershell
-New-TestKrbTgtAccount -TargetDomain "contoso.com" -WhatIf
+New-TestKrbtgtAccount -TargetDomain "contoso.com" -WhatIf
 ```
 
 **Output Example:**
@@ -307,56 +307,56 @@ New-TestKrbTgtAccount -TargetDomain "contoso.com" -WhatIf
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 CREATE TEST KRBTGT ACCOUNTS...
 
-Do you really want to continue and create TEST KrbTgt accounts? [CONTINUE | STOP]: CONTINUE
+Do you really want to continue and create TEST Krbtgt accounts? [CONTINUE | STOP]: CONTINUE
 
   --> Chosen: CONTINUE
 
 +++++
-+++ Create Test KrbTgt Account...: 'krbtgt_TEST' +++
++++ Create Test Krbtgt Account...: 'krbtgt_TEST' +++
 +++ Used By RWDC.................: 'All RWDCs' +++
 +++++
 
-Creating test KrbTgt account: krbtgt_TEST
+Creating test Krbtgt account: krbtgt_TEST
 Account created successfully
 Set password for: CN=krbtgt_TEST,CN=Users,DC=contoso,DC=com
 Added to group: CN=Denied RODC Password Replication Group,CN=Users,DC=contoso,DC=com
 
 +++++
-+++ Create Test KrbTgt Account...: 'krbtgt_12345_TEST' +++
++++ Create Test Krbtgt Account...: 'krbtgt_12345_TEST' +++
 +++ Used By RODC.................: 'RODC01.contoso.com' (Site: Branch-Site) +++
 +++++
 
-Creating test KrbTgt account: krbtgt_12345_TEST
+Creating test Krbtgt account: krbtgt_12345_TEST
 Account created successfully
 Set password for: CN=krbtgt_12345_TEST,CN=Users,DC=contoso,DC=com
 Added to group: CN=Allowed RODC Password Replication Group,CN=Users,DC=contoso,DC=com
 
-All TEST KrbTgt accounts have been processed.
+All TEST Krbtgt accounts have been processed.
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
 ---
 
-## Delete TEST Accounts (Remove-TestKrbTgtAccount)
+## Delete TEST Accounts (Remove-TestKrbtgtAccount)
 
-**Purpose:** Remove all TEST KrbTgt accounts created by New-TestKrbTgtAccount.
+**Purpose:** Remove all TEST Krbtgt accounts created by New-TestKrbtgtAccount.
 
-**Note:** This is a separate function, not a mode of Reset-KrbTgtPassword.
+**Note:** This is a separate function, not a mode of Reset-KrbtgtPassword.
 
 ### Basic Usage
 ```powershell
-Remove-TestKrbTgtAccount -TargetDomain "contoso.com"
+Remove-TestKrbtgtAccount -TargetDomain "contoso.com"
 ```
 
 ### With Remote Domain Credentials
 ```powershell
 $cred = Get-Credential
-Remove-TestKrbTgtAccount -TargetDomain "remote.domain.com" -Credential $cred
+Remove-TestKrbtgtAccount -TargetDomain "remote.domain.com" -Credential $cred
 ```
 
 ### With WhatIf (preview only)
 ```powershell
-Remove-TestKrbTgtAccount -TargetDomain "contoso.com" -WhatIf
+Remove-TestKrbtgtAccount -TargetDomain "contoso.com" -WhatIf
 ```
 
 **Output Example:**
@@ -364,27 +364,27 @@ Remove-TestKrbTgtAccount -TargetDomain "contoso.com" -WhatIf
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 CLEANUP TEST KRBTGT ACCOUNTS...
 
-Do you really want to continue and delete TEST KrbTgt accounts? [CONTINUE | STOP]: CONTINUE
+Do you really want to continue and delete TEST Krbtgt accounts? [CONTINUE | STOP]: CONTINUE
 
   --> Chosen: CONTINUE
 
 +++++
-+++ Delete Test KrbTgt Account...: 'krbtgt_TEST' +++
++++ Delete Test Krbtgt Account...: 'krbtgt_TEST' +++
 +++ Used By RWDC.................: 'All RWDCs' +++
 +++++
 
-Removing test KrbTgt account: krbtgt_TEST
+Removing test Krbtgt account: krbtgt_TEST
 Account removed successfully
 
 +++++
-+++ Delete Test KrbTgt Account...: 'krbtgt_12345_TEST' +++
++++ Delete Test Krbtgt Account...: 'krbtgt_12345_TEST' +++
 +++ Used By RODC.................: 'RODC01.contoso.com' (Site: Branch-Site) +++
 +++++
 
-Removing test KrbTgt account: krbtgt_12345_TEST
+Removing test Krbtgt account: krbtgt_12345_TEST
 Account removed successfully
 
-All TEST KrbTgt accounts have been processed.
+All TEST Krbtgt accounts have been processed.
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
@@ -396,76 +396,76 @@ All TEST KrbTgt accounts have been processed.
 
 ```powershell
 # 1. Import module
-Import-Module "C:\Path\To\Reset-KrbTgtPassword\Reset-KrbTgtPassword.psd1"
+Import-Module "C:\Path\To\Reset-KrbtgtPassword\Reset-KrbtgtPassword.psd1"
 
 # 2. Gather information
-Reset-KrbTgtPassword -Mode Info -TargetDomain "contoso.com"
+Reset-KrbtgtPassword -Mode Info -TargetDomain "contoso.com"
 
 # 3. Test replication with canary
-Reset-KrbTgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
 
 # 4. Create TEST accounts
-New-TestKrbTgtAccount -TargetDomain "contoso.com" -Confirm:$false
+New-TestKrbtgtAccount -TargetDomain "contoso.com" -Confirm:$false
 
 # 5. Simulate TEST reset
-Reset-KrbTgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateTest -TargetDomain "contoso.com" -Scope AllRWDCs
 
 # 6. Perform TEST reset
-Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRWDCs -ContinueOnWarning -Confirm:$false
+Reset-KrbtgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRWDCs -ContinueOnWarning -Confirm:$false
 
 # 7. Simulate PROD reset
-Reset-KrbTgtPassword -Mode SimulateProd -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateProd -TargetDomain "contoso.com" -Scope AllRWDCs
 
 # 8. Clean up TEST accounts
-Remove-TestKrbTgtAccount -TargetDomain "contoso.com" -Confirm:$false
+Remove-TestKrbtgtAccount -TargetDomain "contoso.com" -Confirm:$false
 ```
 
 ### Production Workflow (with proper testing)
 
 ```powershell
 # Week 1: Create and test with TEST accounts
-New-TestKrbTgtAccount -TargetDomain "prod.contoso.com"
-Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "prod.contoso.com" -Scope AllRWDCs
+New-TestKrbtgtAccount -TargetDomain "prod.contoso.com"
+Reset-KrbtgtPassword -Mode ResetTest -TargetDomain "prod.contoso.com" -Scope AllRWDCs
 # Monitor for 24-48 hours
 
 # Week 2: Simulate production reset
-Reset-KrbTgtPassword -Mode SimulateProd -TargetDomain "prod.contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateProd -TargetDomain "prod.contoso.com" -Scope AllRWDCs
 # Review simulation results
 
 # Week 3: During maintenance window, perform production reset
-Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "prod.contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode ResetProd -TargetDomain "prod.contoso.com" -Scope AllRWDCs
 # Monitor closely for authentication issues
 
 # Week 4: Verify and perform second reset (Microsoft recommendation)
-Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "prod.contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode ResetProd -TargetDomain "prod.contoso.com" -Scope AllRWDCs
 
 # Clean up TEST accounts
-Remove-TestKrbTgtAccount -TargetDomain "prod.contoso.com"
+Remove-TestKrbtgtAccount -TargetDomain "prod.contoso.com"
 ```
 
 ### Multi-Forest Environment
 
 ```powershell
 # Local forest
-Reset-KrbTgtPassword -Mode Info -TargetDomain "local.contoso.com"
+Reset-KrbtgtPassword -Mode Info -TargetDomain "local.contoso.com"
 
 # Remote forest (requires credentials)
 $remoteCred = Get-Credential "REMOTE\Administrator"
-Reset-KrbTgtPassword -Mode Info -TargetDomain "remote.fabrikam.com" -Credential $remoteCred
+Reset-KrbtgtPassword -Mode Info -TargetDomain "remote.fabrikam.com" -Credential $remoteCred
 ```
 
 ### RODC-Specific Operations
 
 ```powershell
 # Target only RODCs
-Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRODCs
+Reset-KrbtgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope AllRODCs
 
 # Target specific RODCs
 $targetRODCs = @(
     "RODC-Branch1.contoso.com",
     "RODC-Branch2.contoso.com"
 )
-Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope SpecificRODCs -TargetRODCs $targetRODCs
+Reset-KrbtgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope SpecificRODCs -TargetRODCs $targetRODCs
 ```
 
 ---
@@ -474,12 +474,12 @@ Reset-KrbTgtPassword -Mode ResetTest -TargetDomain "contoso.com" -Scope Specific
 
 All operations are automatically logged to:
 ```
-<ModulePublicFolder>\<YYYY-MM-DD_HH.mm.ss>_<COMPUTERNAME>_Reset-KrbTgtPassword.log
+<ModulePublicFolder>\<YYYY-MM-DD_HH.mm.ss>_<COMPUTERNAME>_Reset-KrbtgtPassword.log
 ```
 
 Example:
 ```
-C:\...\Reset-KrbTgtPassword\Public\2025-10-22_10.25.59_ADCSGOAT-PAW_Reset-KrbTgtPassword.log
+C:\...\Reset-KrbtgtPassword\Public\2025-10-22_10.25.59_ADCSGOAT-PAW_Reset-KrbtgtPassword.log
 ```
 
 The log file path is displayed at the end of each operation. To view it:
@@ -495,7 +495,7 @@ The log file path is displayed at the end of each operation. To view it:
 1. **Always test first:**
    - Use Mode 1 (Info) to understand the environment
    - Use Mode 2 (SimulateCanary) to test replication
-   - Create TEST accounts with New-TestKrbTgtAccount
+   - Create TEST accounts with New-TestKrbtgtAccount
    - Test with Mode 3/4 before production
 
 2. **Production resets:**
@@ -505,7 +505,7 @@ The log file path is displayed at the end of each operation. To view it:
    - Have rollback plan ready
 
 3. **RODCs:**
-   - Reset RODC KrbTgt accounts independently
+   - Reset RODC Krbtgt accounts independently
    - Monitor branch connectivity
    - Consider impact on cached credentials
 
@@ -527,10 +527,10 @@ The log file path is displayed at the end of each operation. To view it:
 ### Module Not Found
 ```powershell
 # Verify path
-Test-Path "C:\Path\To\Reset-KrbTgtPassword\Reset-KrbTgtPassword.psd1"
+Test-Path "C:\Path\To\Reset-KrbtgtPassword\Reset-KrbtgtPassword.psd1"
 
 # Import with full path
-Import-Module "C:\Path\To\Reset-KrbTgtPassword\Reset-KrbTgtPassword.psd1" -Force
+Import-Module "C:\Path\To\Reset-KrbtgtPassword\Reset-KrbtgtPassword.psd1" -Force
 ```
 
 ### Permission Errors
@@ -548,7 +548,7 @@ Test-LocalElevation
 Get-ADDomainControllers -DomainFQDN "contoso.com"
 
 # Test replication with canary first
-Reset-KrbTgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
 ```
 
 ### LDAP Connection Errors
@@ -564,5 +564,5 @@ Test-PortConnection -Server "DC01.contoso.com" -Port 636 -Protocol TCP
 
 For issues, questions, or contributions:
 - GitHub: https://github.com/zjorz/Public-AD-Scripts
-- Original Script: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
-- Module Version: Reset-KrbTgtPassword v4.0.0
+- Original Script: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
+- Module Version: Reset-KrbtgtPassword v4.0.0

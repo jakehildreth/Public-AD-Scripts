@@ -1,10 +1,10 @@
-Function New-InternalTestKrbTgtAccount {
+Function New-InternalTestKrbtgtAccount {
     <#
     .SYNOPSIS
-        Creates or updates a TEST KrbTgt account in Active Directory.
+        Creates or updates a TEST Krbtgt account in Active Directory.
 
     .DESCRIPTION
-        Creates a test/bogus KrbTgt account (krbtgt_TEST or krbtgt_<Number>_TEST for RODCs) for
+        Creates a test/bogus Krbtgt account (krbtgt_TEST or krbtgt_<Number>_TEST for RODCs) for
         testing purposes. For RWDC accounts, adds to Denied RODC Password Replication Group.
         For RODC accounts, adds to Allowed RODC Password Replication Group.
         If the account already exists, updates description and group membership as needed.
@@ -12,13 +12,13 @@ Function New-InternalTestKrbTgtAccount {
     .PARAMETER TargetedADDomainRWDCFQDN
         The FQDN of the RWDC where the TEST account will be created/updated.
 
-    .PARAMETER KrbTgtInUseByDCFQDN
-        For RODC accounts, the FQDN of the RODC that uses this KrbTgt account.
+    .PARAMETER KrbtgtInUseByDCFQDN
+        For RODC accounts, the FQDN of the RODC that uses this Krbtgt account.
 
-    .PARAMETER KrbTgtSamAccountName
-        The SamAccountName for the TEST KrbTgt account (e.g., "krbtgt_TEST" or "krbtgt_12345_TEST").
+    .PARAMETER KrbtgtSamAccountName
+        The SamAccountName for the TEST Krbtgt account (e.g., "krbtgt_TEST" or "krbtgt_12345_TEST").
 
-    .PARAMETER KrbTgtUse
+    .PARAMETER KrbtgtUse
         String indicating account type: "RWDC" or "RODC".
 
     .PARAMETER TargetedADDomainDomainSID
@@ -34,8 +34,8 @@ Function New-InternalTestKrbTgtAccount {
         None. Logs creation/update status via Write-Log.
 
     .NOTES
-        Author: Original function from Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
-        Modified: Extracted to modular structure for Reset-KrbTgtPassword v4.0.0
+        Author: Original function from Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
+        Modified: Extracted to modular structure for Reset-KrbtgtPassword v4.0.0
         Dependencies: Get-LdapConnection, Get-RootDSE, Add-LdapObject, Edit-LdapObject, 
                       Find-LdapObject, New-ComplexPassword, Write-Log
         
@@ -49,14 +49,14 @@ Function New-InternalTestKrbTgtAccount {
         [string]$TargetedADDomainRWDCFQDN,
 
         [Parameter(Mandatory = $false)]
-        [string]$KrbTgtInUseByDCFQDN,
+        [string]$KrbtgtInUseByDCFQDN,
 
         [Parameter(Mandatory = $true)]
-        [string]$KrbTgtSamAccountName,
+        [string]$KrbtgtSamAccountName,
 
         [Parameter(Mandatory = $true)]
         [ValidateSet("RWDC", "RODC")]
-        [string]$KrbTgtUse,
+        [string]$KrbtgtUse,
 
         [Parameter(Mandatory = $true)]
         [string]$TargetedADDomainDomainSID,
@@ -102,46 +102,46 @@ Function New-InternalTestKrbTgtAccount {
     }
 
     # Determine The DN Of The Users Container Of The Targeted Domain
-    $containerForTestKrbTgtAccount = "CN=Users," + $targetedADdomainDefaultNC
+    $containerForTestKrbtgtAccount = "CN=Users," + $targetedADdomainDefaultNC
 
-    # Set The SamAccountName For The Test/Bogus KrbTgt Account
-    $testKrbTgtObjectSamAccountName = $KrbTgtSamAccountName
+    # Set The SamAccountName For The Test/Bogus Krbtgt Account
+    $testKrbtgtObjectSamAccountName = $KrbtgtSamAccountName
 
-    # Set The Name For The Test/Bogus KrbTgt Account
-    $testKrbTgtObjectName = $testKrbTgtObjectSamAccountName
+    # Set The Name For The Test/Bogus Krbtgt Account
+    $testKrbtgtObjectName = $testKrbtgtObjectSamAccountName
 
-    # Set The Description For The Test/Bogus KrbTgt Account
-    $testKrbTgtObjectDescription = $null
+    # Set The Description For The Test/Bogus Krbtgt Account
+    $testKrbtgtObjectDescription = $null
 
-    # Set The Description For The Test/Bogus KrbTgt Account For RWDCs
-    If ($KrbTgtUse -eq "RWDC") {
-        $testKrbTgtObjectDescription = "Test Copy Representing '$($KrbTgtSamAccountName.SubString(0,$KrbTgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RWDCs"
+    # Set The Description For The Test/Bogus Krbtgt Account For RWDCs
+    If ($KrbtgtUse -eq "RWDC") {
+        $testKrbtgtObjectDescription = "Test Copy Representing '$($KrbtgtSamAccountName.SubString(0,$KrbtgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RWDCs"
     }
 
-    # Set The Description For The Test/Bogus KrbTgt Account For RODCs
-    If ($KrbTgtUse -eq "RODC") {
-        $testKrbTgtObjectDescription = "Test Copy Representing '$($KrbTgtSamAccountName.SubString(0,$KrbTgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RODC '$KrbTgtInUseByDCFQDN'"
+    # Set The Description For The Test/Bogus Krbtgt Account For RODCs
+    If ($KrbtgtUse -eq "RODC") {
+        $testKrbtgtObjectDescription = "Test Copy Representing '$($KrbtgtSamAccountName.SubString(0,$KrbtgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RODC '$KrbtgtInUseByDCFQDN'"
     }
 
-    # Generate The DN Of The Test KrbTgt Object
-    $testKrbTgtObjectDN = "CN=" + $testKrbTgtObjectName + "," + $containerForTestKrbTgtAccount
+    # Generate The DN Of The Test Krbtgt Object
+    $testKrbtgtObjectDN = "CN=" + $testKrbtgtObjectName + "," + $containerForTestKrbtgtAccount
 
-    # Display Information About The Test KrbTgt To Be Created/Edited
+    # Display Information About The Test Krbtgt To Be Created/Edited
     Write-Log -Message "  --> RWDC To Create/Update Object On.......: '$TargetedADDomainRWDCFQDN'"
-    Write-Log -Message "  --> Full Name Test KrbTgt Account.........: '$testKrbTgtObjectName'"
-    Write-Log -Message "  --> Description...........................: '$testKrbTgtObjectDescription'"
-    Write-Log -Message "  --> Container Test KrbTgt Account.........: '$containerForTestKrbTgtAccount'"
-    If ($KrbTgtUse -eq "RWDC") {
+    Write-Log -Message "  --> Full Name Test Krbtgt Account.........: '$testKrbtgtObjectName'"
+    Write-Log -Message "  --> Description...........................: '$testKrbtgtObjectDescription'"
+    Write-Log -Message "  --> Container Test Krbtgt Account.........: '$containerForTestKrbtgtAccount'"
+    If ($KrbtgtUse -eq "RWDC") {
         Write-Log -Message "  --> To Be Used By DC(s)...................: 'All RWDCs'"
     }
-    If ($KrbTgtUse -eq "RODC") {
-        Write-Log -Message "  --> To Be Used By RODC....................: '$KrbTgtInUseByDCFQDN'"
+    If ($KrbtgtUse -eq "RODC") {
+        Write-Log -Message "  --> To Be Used By RODC....................: '$KrbtgtInUseByDCFQDN'"
     }
 
-    # If The Test/Bogus KrbTgt Account Is Used By RWDCs
+    # If The Test/Bogus Krbtgt Account Is Used By RWDCs
     $deniedRODCPwdReplGroupObjectDN = $null
     $deniedRODCPwdReplGroupObjectName = $null
-    If ($KrbTgtUse -eq "RWDC") {
+    If ($KrbtgtUse -eq "RWDC") {
         $deniedRODCPwdReplGroupRID = "572"
         $deniedRODCPwdReplGroupObjectSID = $TargetedADDomainDomainSID + "-" + $deniedRODCPwdReplGroupRID
         If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
@@ -181,10 +181,10 @@ Function New-InternalTestKrbTgtAccount {
         Write-Log -Message "  --> Membership Of RODC PRP Group..........: '$deniedRODCPwdReplGroupObjectName' ('$deniedRODCPwdReplGroupObjectDN')"
     }
 
-    # If The Test/Bogus KrbTgt Account Is Used By RODCs
+    # If The Test/Bogus Krbtgt Account Is Used By RODCs
     $allowedRODCPwdReplGroupObjectDN = $null
     $allowedRODCPwdReplGroupObjectName = $null
-    If ($KrbTgtUse -eq "RODC") {
+    If ($KrbtgtUse -eq "RODC") {
         $allowedRODCPwdReplGroupRID = "571"
         $allowedRODCPwdReplGroupObjectSID = $TargetedADDomainDomainSID + "-" + $allowedRODCPwdReplGroupRID
         If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
@@ -225,15 +225,15 @@ Function New-InternalTestKrbTgtAccount {
     }
     Write-Log -Message ""
 
-    # Check If The Test/Bogus KrbTgt Account Already Exists In AD
-    $testKrbTgtObject = $null
+    # Check If The Test/Bogus Krbtgt Account Already Exists In AD
+    $testKrbtgtObject = $null
     If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
         Try {
             $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-            $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)" -PropertiesToLoad @("description")
+            $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)" -PropertiesToLoad @("description")
         } Catch {
             Write-Log -Message "" -Level ERROR
-            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN'..." -Level ERROR
+            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN'..." -Level ERROR
             Write-Log -Message "" -Level ERROR
             Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
             Write-Log -Message "" -Level ERROR
@@ -246,10 +246,10 @@ Function New-InternalTestKrbTgtAccount {
     If ($LocalADForest -eq $false -And $AdminCredentials) {
         Try {
             $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
-            $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)" -PropertiesToLoad @("description")
+            $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)" -PropertiesToLoad @("description")
         } Catch {
             Write-Log -Message "" -Level ERROR
-            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN' Using '$($AdminCredentials.UserName)'..." -Level ERROR
             Write-Log -Message "" -Level ERROR
             Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
             Write-Log -Message "" -Level ERROR
@@ -261,22 +261,22 @@ Function New-InternalTestKrbTgtAccount {
     }
 
     $updateMembership = $false
-    If ($testKrbTgtObject) {
-        Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ALREADY EXISTS on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level REMARK
+    If ($testKrbtgtObject) {
+        Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ALREADY EXISTS on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level REMARK
         Write-Log -Message "" -Level REMARK
 
-        # Update The Description For The Test KrbTgt Account If There Is A Mismatch For Whatever Reason
-        If ($testKrbTgtObject.Description -ne $testKrbTgtObjectDescription) {
-            $testKrbTgtObj = [PSCustomObject]@{
-                distinguishedName = $testKrbTgtObjectDN
-                description       = $testKrbTgtObjectDescription
+        # Update The Description For The Test Krbtgt Account If There Is A Mismatch For Whatever Reason
+        If ($testKrbtgtObject.Description -ne $testKrbtgtObjectDescription) {
+            $testKrbtgtObj = [PSCustomObject]@{
+                distinguishedName = $testKrbtgtObjectDN
+                description       = $testKrbtgtObjectDescription
             }
             If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
                 Try {
-                    Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Mode Replace -Object $testKrbTgtObj
+                    Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Mode Replace -Object $testKrbtgtObj
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Updating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName'..." -Level ERROR
+                    Write-Log -Message "Error Updating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -288,10 +288,10 @@ Function New-InternalTestKrbTgtAccount {
             }
             If ($LocalADForest -eq $false -And $AdminCredentials) {
                 Try {
-                    Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Mode Replace -Object $testKrbTgtObj
+                    Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Mode Replace -Object $testKrbtgtObj
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Updating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+                    Write-Log -Message "Error Updating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -301,20 +301,20 @@ Function New-InternalTestKrbTgtAccount {
                     Write-Log -Message "" -Level ERROR
                 }
             }
-            Write-Log -Message "  --> Updated Description For Existing Test KrbTgt Account [$testKrbTgtObjectDN] on RWDC [$TargetedADDomainRWDCFQDN] Due To Mismatch!..." -Level REMARK
+            Write-Log -Message "  --> Updated Description For Existing Test Krbtgt Account [$testKrbtgtObjectDN] on RWDC [$TargetedADDomainRWDCFQDN] Due To Mismatch!..." -Level REMARK
         }
 
-        # Check The Membership Of The Test KrbTgt Accounts And Update As Needed
-        If ($KrbTgtUse -eq "RWDC") {
+        # Check The Membership Of The Test Krbtgt Accounts And Update As Needed
+        If ($KrbtgtUse -eq "RWDC") {
             If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
+                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
                         $updateMembership = $true
                     }
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName'..." -Level ERROR
+                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -327,12 +327,12 @@ Function New-InternalTestKrbTgtAccount {
             If ($LocalADForest -eq $false -And $AdminCredentials) {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
-                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
+                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
                         $updateMembership = $true
                     }
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -343,16 +343,16 @@ Function New-InternalTestKrbTgtAccount {
                 }
             }
         }
-        If ($KrbTgtUse -eq "RODC") {
+        If ($KrbtgtUse -eq "RODC") {
             If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
+                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
                         $updateMembership = $true
                     }
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName'..." -Level ERROR
+                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -365,12 +365,12 @@ Function New-InternalTestKrbTgtAccount {
             If ($LocalADForest -eq $false -And $AdminCredentials) {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
-                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
+                    If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
                         $updateMembership = $true
                     }
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+                    Write-Log -Message "Error Checking Membership On '$TargetedADDomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -382,7 +382,7 @@ Function New-InternalTestKrbTgtAccount {
             }
         }
     } Else {
-        # If The Test/Bogus KrbTgt Account Does Not Exist Yet In AD
+        # If The Test/Bogus Krbtgt Account Does Not Exist Yet In AD
         # Specify The Number Of Characters The Generate Password Should Contain
         $passwdNrChars = 64
 
@@ -390,23 +390,23 @@ Function New-InternalTestKrbTgtAccount {
         $krbTgtPassword = $null
         $krbTgtPassword = (New-ComplexPassword -Length $passwdNrChars).ToString()
 
-        # Try To Create The Test/Bogus KrbTgt Account In The AD Domain And If Not Successfull Throw Error
+        # Try To Create The Test/Bogus Krbtgt Account In The AD Domain And If Not Successfull Throw Error
         Try {
-            $testKrbTgtObj = [PSCustomObject]@{
-                distinguishedName  = $testKrbTgtObjectDN
+            $testKrbtgtObj = [PSCustomObject]@{
+                distinguishedName  = $testKrbtgtObjectDN
                 objectClass        = "user"
-                sAMAccountName     = $testKrbTgtObjectSamAccountName
-                displayName        = $testKrbTgtObjectName
+                sAMAccountName     = $testKrbtgtObjectSamAccountName
+                displayName        = $testKrbtgtObjectName
                 userAccountControl = 514
                 unicodePwd         = $krbTgtPassword
-                description        = $testKrbTgtObjectDescription
+                description        = $testKrbtgtObjectDescription
             }
             If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
                 Try {
-                    Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbTgtObj -BinaryProps unicodePwd
+                    Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbtgtObj -BinaryProps unicodePwd
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Creating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName'..." -Level ERROR
+                    Write-Log -Message "Error Creating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -418,10 +418,10 @@ Function New-InternalTestKrbTgtAccount {
             }
             If ($LocalADForest -eq $false -And $AdminCredentials) {
                 Try {
-                    Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Object $testKrbTgtObj -BinaryProps unicodePwd
+                    Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Object $testKrbtgtObj -BinaryProps unicodePwd
                 } Catch {
                     Write-Log -Message "" -Level ERROR
-                    Write-Log -Message "Error Creating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+                    Write-Log -Message "Error Creating User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
                     Write-Log -Message "" -Level ERROR
                     Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                     Write-Log -Message "" -Level ERROR
@@ -432,19 +432,19 @@ Function New-InternalTestKrbTgtAccount {
                 }
             }
         } Catch {
-            Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] FAILED TO BE CREATED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level ERROR
+            Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] FAILED TO BE CREATED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level ERROR
             Write-Log -Message "" -Level ERROR
         }
 
-        # Check The The Test/Bogus KrbTgt Account Exists And Was created In AD
-        $testKrbTgtObject = $null
+        # Check The The Test/Bogus Krbtgt Account Exists And Was created In AD
+        $testKrbtgtObject = $null
         If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
             Try {
                 $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-                $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbTgtObjectName))"
+                $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbtgtObjectName))"
             } Catch {
                 Write-Log -Message "" -Level ERROR
-                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'name=$testKrbTgtObjectName'..." -Level ERROR
+                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'name=$testKrbtgtObjectName'..." -Level ERROR
                 Write-Log -Message "" -Level ERROR
                 Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                 Write-Log -Message "" -Level ERROR
@@ -457,10 +457,10 @@ Function New-InternalTestKrbTgtAccount {
         If ($LocalADForest -eq $false -And $AdminCredentials) {
             Try {
                 $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
-                $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbTgtObjectName))"
+                $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbtgtObjectName))"
             } Catch {
                 Write-Log -Message "" -Level ERROR
-                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'name=$testKrbTgtObjectName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'name=$testKrbtgtObjectName' Using '$($AdminCredentials.UserName)'..." -Level ERROR
                 Write-Log -Message "" -Level ERROR
                 Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                 Write-Log -Message "" -Level ERROR
@@ -470,9 +470,9 @@ Function New-InternalTestKrbTgtAccount {
                 Write-Log -Message "" -Level ERROR
             }
         }
-        If ($testKrbTgtObject) {
-            $testKrbTgtObjectDN = $testKrbTgtObject.DistinguishedName
-            Write-Log -Message "  --> New Test KrbTgt Account [$testKrbTgtObjectDN] CREATED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level REMARK
+        If ($testKrbtgtObject) {
+            $testKrbtgtObjectDN = $testKrbtgtObject.DistinguishedName
+            Write-Log -Message "  --> New Test Krbtgt Account [$testKrbtgtObjectDN] CREATED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level REMARK
             Write-Log -Message "" -Level REMARK
             $updateMembership = $true
         } Else {
@@ -480,16 +480,16 @@ Function New-InternalTestKrbTgtAccount {
         }
     }
 
-    If ($testKrbTgtObject -And $updateMembership -eq $true) {
-        # If The Test/Bogus KrbTgt Account Already Exists In AD
-        # If The Test/Bogus KrbTgt Account Is Not Yet A Member Of The Specified AD Group, Then Add It As A Member
-        If ($KrbTgtUse -eq "RWDC") {
-            # If The Test/Bogus KrbTgt Account Is Used By RWDCs
+    If ($testKrbtgtObject -And $updateMembership -eq $true) {
+        # If The Test/Bogus Krbtgt Account Already Exists In AD
+        # If The Test/Bogus Krbtgt Account Is Not Yet A Member Of The Specified AD Group, Then Add It As A Member
+        If ($KrbtgtUse -eq "RWDC") {
+            # If The Test/Bogus Krbtgt Account Is Used By RWDCs
             If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
                     $deniedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$deniedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-                    $deniedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+                    $deniedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
                     Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Object $deniedRODCPwdReplGroupObject -Mode Add
                 } Catch {
                     Write-Log -Message "" -Level ERROR
@@ -507,7 +507,7 @@ Function New-InternalTestKrbTgtAccount {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
                     $deniedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$deniedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-                    $deniedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+                    $deniedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
                     Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Object $deniedRODCPwdReplGroupObject -Mode Add
                 } Catch {
                     Write-Log -Message "" -Level ERROR
@@ -521,17 +521,17 @@ Function New-InternalTestKrbTgtAccount {
                     Write-Log -Message "" -Level ERROR
                 }
             }
-            Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ADDED AS MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." -Level REMARK
+            Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ADDED AS MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." -Level REMARK
             Write-Log -Message "" -Level REMARK
         }
 
-        If ($KrbTgtUse -eq "RODC") {
-            # If The Test/Bogus KrbTgt Account Is Used By RODCs
+        If ($KrbtgtUse -eq "RODC") {
+            # If The Test/Bogus Krbtgt Account Is Used By RODCs
             If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
                     $allowedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$allowedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-                    $allowedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+                    $allowedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
                     Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Object $allowedRODCPwdReplGroupObject -Mode Add
                 } Catch {
                     Write-Log -Message "" -Level ERROR
@@ -549,7 +549,7 @@ Function New-InternalTestKrbTgtAccount {
                 Try {
                     $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
                     $allowedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$allowedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-                    $allowedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+                    $allowedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
                     Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Object $allowedRODCPwdReplGroupObject -Mode Add
                 } Catch {
                     Write-Log -Message "" -Level ERROR
@@ -563,16 +563,16 @@ Function New-InternalTestKrbTgtAccount {
                     Write-Log -Message "" -Level ERROR
                 }
             }
-            Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ADDED AS MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." -Level REMARK
+            Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ADDED AS MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." -Level REMARK
             Write-Log -Message "" -Level REMARK
         }
-    } ElseIf ($testKrbTgtObject -And $updateMembership -eq $false) {
-        # If The Test/Bogus KrbTgt Account Is Already A Member Of The Specified AD Group
-        If ($KrbTgtUse -eq "RWDC") {
-            Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ALREADY MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." -Level REMARK
+    } ElseIf ($testKrbtgtObject -And $updateMembership -eq $false) {
+        # If The Test/Bogus Krbtgt Account Is Already A Member Of The Specified AD Group
+        If ($KrbtgtUse -eq "RWDC") {
+            Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ALREADY MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." -Level REMARK
         }
-        If ($KrbTgtUse -eq "RODC") {
-            Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ALREADY MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." -Level REMARK
+        If ($KrbtgtUse -eq "RODC") {
+            Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ALREADY MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." -Level REMARK
         }
         Write-Log -Message "" -Level REMARK
     }

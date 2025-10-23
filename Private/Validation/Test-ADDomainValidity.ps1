@@ -44,7 +44,7 @@ Function Test-ADDomainValidity {
     Validates a remote domain with credentials.
 
 .NOTES
-    Original logic extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 5965-5980)
+    Original logic extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 5965-5980)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     

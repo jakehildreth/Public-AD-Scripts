@@ -1,10 +1,10 @@
-function Remove-TestKrbTgtAccount {
+function Remove-TestKrbtgtAccount {
     <#
     .SYNOPSIS
-        Removes TEST/BOGUS KrbTgt accounts
+        Removes TEST/BOGUS Krbtgt accounts
     
     .DESCRIPTION
-        Removes TEST KrbTgt accounts that were created for testing purposes.
+        Removes TEST Krbtgt accounts that were created for testing purposes.
         
         For RWDCs: Removes 'krbtgt_TEST' account
         For RODCs: Removes 'krbtgt_<Number>_TEST' accounts (one per RODC)
@@ -18,34 +18,43 @@ function Remove-TestKrbTgtAccount {
         PSCredential for authentication (if targeting remote domain)
     
     .EXAMPLE
-        Remove-TestKrbTgtAccount -TargetDomain "contoso.com"
+        Remove-TestKrbtgtAccount -TargetDomain "contoso.com"
         
-        Removes TEST KrbTgt accounts from the contoso.com domain
+        Removes TEST Krbtgt accounts from the contoso.com domain
     
     .EXAMPLE
-        Remove-TestKrbTgtAccount -TargetDomain "child.contoso.com" -Credential (Get-Credential)
+        Remove-TestKrbtgtAccount -TargetDomain "child.contoso.com" -Credential (Get-Credential)
         
-        Removes TEST KrbTgt accounts using alternate credentials
+        Removes TEST Krbtgt accounts using alternate credentials
+    
+    .EXAMPLE
+        "contoso.com", "fabrikam.com" | Remove-TestKrbtgtAccount
+        
+        Removes TEST Krbtgt accounts from multiple domains via pipeline
+    
+    .OUTPUTS
+        None. Removal status is displayed via logging output.
     
     .NOTES
         Requires Domain Admin or Enterprise Admin permissions
         Only removes TEST accounts (_TEST suffix)
-        Will not remove production KrbTgt accounts
+        Will not remove production Krbtgt accounts
     
     .LINK
-        New-TestKrbTgtAccount
+        New-TestKrbtgtAccount
     #>
-    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$TargetDomain,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
     
     begin {
-        Write-Verbose "Remove-TestKrbTgtAccount: BEGIN block"
+        Write-Verbose "Remove-TestKrbtgtAccount: BEGIN block"
         Write-Log -Message "------------------------------------------------------------------------------------------------------------------------------------------------------" -Level HEADER
         Write-Log -Message "CLEANUP TEST KRBTGT ACCOUNTS (MODE 9)..." -Level HEADER
         Write-Log -Message ""
@@ -61,24 +70,14 @@ function Remove-TestKrbTgtAccount {
     }
     
     process {
-        Write-Verbose "Remove-TestKrbTgtAccount: PROCESS block"
+        Write-Verbose "Remove-TestKrbtgtAccount: PROCESS block"
         
         try {
-            # Ask for confirmation
-            Write-Log -Message "Do you really want to continue and delete TEST KrbTgt accounts? [CONTINUE | STOP]: " -Level "ACTION-NO-NEW-LINE"
-            $continueOrStop = Read-Host
-            
-            if ($continueOrStop.ToUpper() -ne "CONTINUE") {
-                Write-Log -Message "" -Level REMARK
-                Write-Log -Message "  --> Chosen: STOP" -Level REMARK
-                Write-Log -Message "" -Level WARNING
-                Write-Log -Message "Operation cancelled by user." -Level WARNING
+            # ShouldProcess confirmation replaces Read-Host prompt
+            if (-not $PSCmdlet.ShouldProcess($TargetDomain, "Remove TEST Krbtgt accounts")) {
+                Write-Verbose "Operation cancelled by user via ShouldProcess"
                 return
             }
-            
-            Write-Log -Message "" -Level REMARK
-            Write-Log -Message "  --> Chosen: CONTINUE" -Level REMARK
-            Write-Log -Message "" -Level REMARK
             
             # Get domain controllers
             Write-Verbose "Discovering domain controllers in $TargetDomain"
@@ -86,7 +85,13 @@ function Remove-TestKrbTgtAccount {
             
             if (-not $dcList -or $dcList.Count -eq 0) {
                 Write-Log -Message "No domain controllers found in $TargetDomain" -Level ERROR
-                return
+                $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                    [System.Exception]::new("No domain controllers found in $TargetDomain"),
+                    'NoDomainControllersFound',
+                    [System.Management.Automation.ErrorCategory]::ObjectNotFound,
+                    $TargetDomain
+                )
+                $PSCmdlet.ThrowTerminatingError($errorRecord)
             }
             
             # Find PDC FSMO holder
@@ -94,7 +99,13 @@ function Remove-TestKrbTgtAccount {
             
             if (-not $pdcFSMO) {
                 Write-Log -Message "Unable to locate PDC FSMO holder in $TargetDomain" -Level ERROR
-                return
+                $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                    [System.Exception]::new("Unable to locate PDC FSMO holder in $TargetDomain"),
+                    'PDCFSMONotFound',
+                    [System.Management.Automation.ErrorCategory]::ObjectNotFound,
+                    $TargetDomain
+                )
+                $PSCmdlet.ThrowTerminatingError($errorRecord)
             }
             
             $targetRWDCFQDN = $pdcFSMO.HostName
@@ -105,15 +116,15 @@ function Remove-TestKrbTgtAccount {
             
             # ===== REMOVE RWDC TEST ACCOUNT =====
             Write-Log -Message "+++++" -Level REMARK
-            Write-Log -Message "+++ Delete Test KrbTgt Account...: 'krbtgt_TEST' +++" -Level REMARK
+            Write-Log -Message "+++ Delete Test Krbtgt Account...: 'krbtgt_TEST' +++" -Level REMARK
             Write-Log -Message "+++ Used By RWDC.................: 'All RWDCs' +++" -Level REMARK
             Write-Log -Message "+++++" -Level REMARK
             Write-Log -Message "" -Level REMARK
             
             if ($PSCmdlet.ShouldProcess("krbtgt_TEST on $targetRWDCFQDN", "Delete TEST account")) {
-                Remove-InternalTestKrbTgtAccount `
+                Remove-InternalTestKrbtgtAccount `
                     -TargetedADDomainRWDCFQDN $targetRWDCFQDN `
-                    -KrbTgtSamAccountName "krbtgt_TEST" `
+                    -KrbtgtSamAccountName "krbtgt_TEST" `
                     -LocalADForest $localADForest `
                     -AdminCredentials $adminCreds
             }
@@ -125,17 +136,17 @@ function Remove-TestKrbTgtAccount {
                 $rodcFQDN = $rodc.HostName
                 $rodcSiteName = $rodc.SiteName
                 
-                # Get the RODC's krbtgt account number from msDS-KrbTgtLink attribute
+                # Get the RODC's krbtgt account number from msDS-KrbtgtLink attribute
                 try {
                     $rodcComputerObj = Find-LdapObject `
                         -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                         -searchBase $domainDN `
                         -searchFilter "(&(objectClass=computer)(dNSHostName=$rodcFQDN))" `
-                        -PropertiesToLoad @("msDS-KrbTgtLink")
+                        -PropertiesToLoad @("msDS-KrbtgtLink")
                     
-                    if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbTgtLink') {
+                    if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbtgtLink') {
                         # Extract krbtgt account DN
-                        $krbTgtDN = $rodcComputerObj.'msDS-KrbTgtLink'
+                        $krbTgtDN = $rodcComputerObj.'msDS-KrbtgtLink'
                         
                         # Get the krbtgt account to extract the sAMAccountName
                         $krbTgtObj = Find-LdapObject `
@@ -149,15 +160,15 @@ function Remove-TestKrbTgtAccount {
                             $krbTgtSamAccountName = $krbTgtObj.sAMAccountName + "_TEST"
                             
                             Write-Log -Message "+++++" -Level REMARK
-                            Write-Log -Message "+++ Delete Test KrbTgt Account...: '$krbTgtSamAccountName' +++" -Level REMARK
+                            Write-Log -Message "+++ Delete Test Krbtgt Account...: '$krbTgtSamAccountName' +++" -Level REMARK
                             Write-Log -Message "+++ Used By RODC.................: '$rodcFQDN' (Site: $rodcSiteName) +++" -Level REMARK
                             Write-Log -Message "+++++" -Level REMARK
                             Write-Log -Message "" -Level REMARK
                             
                             if ($PSCmdlet.ShouldProcess("$krbTgtSamAccountName on $targetRWDCFQDN", "Delete TEST account")) {
-                                Remove-InternalTestKrbTgtAccount `
+                                Remove-InternalTestKrbtgtAccount `
                                     -TargetedADDomainRWDCFQDN $targetRWDCFQDN `
-                                    -KrbTgtSamAccountName $krbTgtSamAccountName `
+                                    -KrbtgtSamAccountName $krbTgtSamAccountName `
                                     -LocalADForest $localADForest `
                                     -AdminCredentials $adminCreds
                             }
@@ -169,17 +180,23 @@ function Remove-TestKrbTgtAccount {
             }
             
             Write-Log -Message "" -Level REMARK
-            Write-Log -Message "All TEST KrbTgt accounts have been processed." -Level SUCCESS
+            Write-Log -Message "All TEST Krbtgt accounts have been processed." -Level SUCCESS
             Write-Log -Message "" -Level REMARK
         }
         catch {
             Write-Log -Message "ERROR removing TEST accounts: $_" -Level ERROR
-            throw
+            $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                $_.Exception,
+                'TestAccountRemovalFailed',
+                [System.Management.Automation.ErrorCategory]::NotSpecified,
+                $TargetDomain
+            )
+            $PSCmdlet.ThrowTerminatingError($errorRecord)
         }
     }
     
     end {
-        Write-Verbose "Remove-TestKrbTgtAccount: END block"
+        Write-Verbose "Remove-TestKrbtgtAccount: END block"
         Write-Log -Message "------------------------------------------------------------------------------------------------------------------------------------------------------" -Level HEADER
     }
 }

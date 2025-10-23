@@ -5,7 +5,7 @@ Function Test-ADReplicationConvergence {
 
 .DESCRIPTION
     Checks multiple domain controllers to verify that an AD object exists and has
-    the expected attribute value (typically pwdLastSet for KrbTgt accounts).
+    the expected attribute value (typically pwdLastSet for Krbtgt accounts).
     This is used to verify that password changes have fully replicated.
 
 .PARAMETER DomainFQDN

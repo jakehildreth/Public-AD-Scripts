@@ -1,10 +1,10 @@
-function Reset-KrbTgtPassword {
+function Reset-KrbtgtPassword {
     <#
     .SYNOPSIS
-        Resets KrbTgt account password for RWDCs and/or RODCs in Active Directory
+        Resets Krbtgt account password for RWDCs and/or RODCs in Active Directory
     
     .DESCRIPTION
-        Main orchestration function for KrbTgt password reset operations.
+        Main orchestration function for Krbtgt password reset operations.
         Supports multiple operation modes for testing and production password resets.
         
         Operation Modes:
@@ -22,7 +22,7 @@ function Reset-KrbTgtPassword {
         FQDN of target Active Directory domain
     
     .PARAMETER Scope
-        Scope of KrbTgt accounts to target (AllRWDCs, AllRODCs, SpecificRODCs)
+        Scope of Krbtgt accounts to target (AllRWDCs, AllRODCs, SpecificRODCs)
     
     .PARAMETER TargetRODCs
         Array of RODC FQDNs when Scope is SpecificRODCs
@@ -37,19 +37,19 @@ function Reset-KrbTgtPassword {
         Continue without confirmation prompts (for automated runs)
     
     .EXAMPLE
-        Reset-KrbTgtPassword -Mode Info -TargetDomain "contoso.com"
+        Reset-KrbtgtPassword -Mode Info -TargetDomain "contoso.com"
         
         Runs informational mode to analyze the environment without making changes
     
     .EXAMPLE
-        Reset-KrbTgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
+        Reset-KrbtgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
         
         Tests replication by creating and monitoring a temporary canary object
     
     .EXAMPLE
-        Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -Confirm
+        Reset-KrbtgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -Confirm
         
-        Resets the production KrbTgt password for all RWDCs (LIVE IMPACT!)
+        Resets the production Krbtgt password for all RWDCs (LIVE IMPACT!)
     
     .NOTES
         Requires:
@@ -87,18 +87,18 @@ function Reset-KrbTgtPassword {
     )
     
     begin {
-        Write-Verbose "Reset-KrbTgtPassword: BEGIN block"
+        Write-Verbose "Reset-KrbtgtPassword: BEGIN block"
         
         # Initialize log file path
         $execDateTime = Get-Date -Format "yyyy-MM-dd_HH.mm.ss"
         $computerName = $env:COMPUTERNAME
-        $logFileName = "$execDateTime`_$computerName`_Reset-KrbTgtPassword.log"
+        $logFileName = "$execDateTime`_$computerName`_Reset-KrbtgtPassword.log"
         $Script:LogFilePath = Join-Path -Path $PSScriptRoot -ChildPath $logFileName
         
         # Display header
         Write-Log -Message "===========================================================================" -Level MAINHEADER
         Write-Log -Message "" -Level MAINHEADER
-        Write-Log -Message "               Reset KrbTgt Password For RWDCs And RODCs" -Level MAINHEADER
+        Write-Log -Message "               Reset Krbtgt Password For RWDCs And RODCs" -Level MAINHEADER
         Write-Log -Message "                          Version 4.0.0" -Level MAINHEADER
         Write-Log -Message "" -Level MAINHEADER
         Write-Log -Message "===========================================================================" -Level MAINHEADER
@@ -128,7 +128,7 @@ function Reset-KrbTgtPassword {
     }
     
     process {
-        Write-Verbose "Reset-KrbTgtPassword: PROCESS block"
+        Write-Verbose "Reset-KrbtgtPassword: PROCESS block"
         
         try {
             # ===== MODE SELECTION =====
@@ -137,10 +137,10 @@ function Reset-KrbTgtPassword {
                 Write-Log -Message "Please select operation mode:" -Level HEADER
                 Write-Log -Message "  1 - Informational Mode (No Changes)" -Level INFO
                 Write-Log -Message "  2 - Simulation Mode | Temporary Canary Object" -Level INFO
-                Write-Log -Message "  3 - Simulation Mode | TEST KrbTgt Accounts (WhatIf)" -Level INFO
-                Write-Log -Message "  4 - Real Reset Mode | TEST KrbTgt Accounts" -Level INFO
-                Write-Log -Message "  5 - Simulation Mode | PROD KrbTgt Accounts (WhatIf)" -Level INFO
-                Write-Log -Message "  6 - Real Reset Mode | PROD KrbTgt Accounts (LIVE IMPACT!)" -Level INFO
+                Write-Log -Message "  3 - Simulation Mode | TEST Krbtgt Accounts (WhatIf)" -Level INFO
+                Write-Log -Message "  4 - Real Reset Mode | TEST Krbtgt Accounts" -Level INFO
+                Write-Log -Message "  5 - Simulation Mode | PROD Krbtgt Accounts (WhatIf)" -Level INFO
+                Write-Log -Message "  6 - Real Reset Mode | PROD Krbtgt Accounts (LIVE IMPACT!)" -Level INFO
                 Write-Log -Message "" -Level INFO
                 Write-Log -Message "Select mode [1-6]: " -Level "ACTION-NO-NEW-LINE"
                 $modeSelection = Read-Host
@@ -247,7 +247,7 @@ function Reset-KrbTgtPassword {
                         Write-Log -Message "      IP: $($dc.IPAddress)" -Level INFO
                         Write-Log -Message "      OS: $($dc.OSVersion)" -Level INFO
                         
-                        # Get KrbTgt account info
+                        # Get Krbtgt account info
                         if ($dc.IsRODC) {
                             # RODC has specific krbtgt account
                             try {
@@ -258,10 +258,10 @@ function Reset-KrbTgtPassword {
                                     -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                     -searchBase $domainDN `
                                     -searchFilter "(&(objectClass=computer)(dNSHostName=$($dc.HostName)))" `
-                                    -PropertiesToLoad @("msDS-KrbTgtLink")
+                                    -PropertiesToLoad @("msDS-KrbtgtLink")
                                 
-                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbTgtLink') {
-                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbTgtLink'
+                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbtgtLink') {
+                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbtgtLink'
                                     $krbTgtObj = Find-LdapObject `
                                         -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                         -searchBase $krbTgtDN `
@@ -271,16 +271,16 @@ function Reset-KrbTgtPassword {
                                     
                                     if ($krbTgtObj) {
                                         $pwdLastSet = [DateTime]::FromFileTime($krbTgtObj.pwdLastSet)
-                                        Write-Log -Message "      KrbTgt Account: $($krbTgtObj.sAMAccountName)" -Level INFO
+                                        Write-Log -Message "      Krbtgt Account: $($krbTgtObj.sAMAccountName)" -Level INFO
                                         Write-Log -Message "      Password Last Set: $pwdLastSet" -Level INFO
                                     }
                                 }
                             } catch {
-                                Write-Log -Message "      KrbTgt Account: Unable to retrieve" -Level WARNING
+                                Write-Log -Message "      Krbtgt Account: Unable to retrieve" -Level WARNING
                             }
                         } else {
                             # RWDC uses standard krbtgt account
-                            Write-Log -Message "      KrbTgt Account: krbtgt" -Level INFO
+                            Write-Log -Message "      Krbtgt Account: krbtgt" -Level INFO
                         }
                         
                         Write-Log -Message "" -Level INFO
@@ -300,7 +300,7 @@ function Reset-KrbTgtPassword {
                     Write-Log -Message "Creating temporary canary object..." -Level INFO
                     $canaryDN = New-TemporaryCanaryObject `
                         -TargetedADDomainRWDCFQDN $targetRWDCFQDN `
-                        -KrbTgtSamAccountName "krbtgt" `
+                        -KrbtgtSamAccountName "krbtgt" `
                         -ExecDateTimeCustom $execDateTime `
                         -LocalADForest $localADForest `
                         -AdminCredentials $adminCreds
@@ -374,10 +374,10 @@ function Reset-KrbTgtPassword {
                                     -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                     -searchBase $domainDN `
                                     -searchFilter "(&(objectClass=computer)(dNSHostName=$($rodc.HostName)))" `
-                                    -PropertiesToLoad @("msDS-KrbTgtLink")
+                                    -PropertiesToLoad @("msDS-KrbtgtLink")
                                 
-                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbTgtLink') {
-                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbTgtLink'
+                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbtgtLink') {
+                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbtgtLink'
                                     $krbTgtObj = Find-LdapObject `
                                         -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                         -searchBase $krbTgtDN `
@@ -414,7 +414,7 @@ function Reset-KrbTgtPassword {
                     Write-Log -Message "TEST RESET MODE - Resetting TEST account passwords" -Level HEADER
                     Write-Log -Message "" -Level INFO
                     
-                    if (-not $PSCmdlet.ShouldProcess("TEST KrbTgt accounts in $TargetDomain", "Reset passwords")) {
+                    if (-not $PSCmdlet.ShouldProcess("TEST Krbtgt accounts in $TargetDomain", "Reset passwords")) {
                         Write-Log -Message "Operation cancelled" -Level WARNING
                         return
                     }
@@ -435,9 +435,9 @@ function Reset-KrbTgtPassword {
                     if ($Scope -eq "AllRWDCs") {
                         Write-Log -Message "Resetting krbtgt_TEST password..." -Level INFO
                         
-                        $resetResult = Set-KrbTgtPassword `
+                        $resetResult = Set-KrbtgtPassword `
                             -TargetedDomainRWDCFQDN $targetRWDCFQDN `
-                            -KrbTgtSamAccountName "krbtgt_TEST" `
+                            -KrbtgtSamAccountName "krbtgt_TEST" `
                             -IsLocalForest $localADForest `
                             -Credential $adminCreds
                         
@@ -471,10 +471,10 @@ function Reset-KrbTgtPassword {
                                     -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                     -searchBase $domainDN `
                                     -searchFilter "(&(objectClass=computer)(dNSHostName=$($rodc.HostName)))" `
-                                    -PropertiesToLoad @("msDS-KrbTgtLink")
+                                    -PropertiesToLoad @("msDS-KrbtgtLink")
                                 
-                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbTgtLink') {
-                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbTgtLink'
+                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbtgtLink') {
+                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbtgtLink'
                                     $krbTgtObj = Find-LdapObject `
                                         -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                         -searchBase $krbTgtDN `
@@ -487,9 +487,9 @@ function Reset-KrbTgtPassword {
                                         
                                         Write-Log -Message "Resetting $testAccountName for RODC $($rodc.HostName)..." -Level INFO
                                         
-                                        $resetResult = Set-KrbTgtPassword `
+                                        $resetResult = Set-KrbtgtPassword `
                                             -TargetDC $targetRWDCFQDN `
-                                            -KrbTgtAccountName $testAccountName `
+                                            -KrbtgtAccountName $testAccountName `
                                             -Credential $adminCreds
                                         
                                         if ($resetResult.Success) {
@@ -544,10 +544,10 @@ function Reset-KrbTgtPassword {
                                     -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                     -searchBase $domainDN `
                                     -searchFilter "(&(objectClass=computer)(dNSHostName=$($rodc.HostName)))" `
-                                    -PropertiesToLoad @("msDS-KrbTgtLink")
+                                    -PropertiesToLoad @("msDS-KrbtgtLink")
                                 
-                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbTgtLink') {
-                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbTgtLink'
+                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbtgtLink') {
+                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbtgtLink'
                                     $krbTgtObj = Find-LdapObject `
                                         -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                         -searchBase $krbTgtDN `
@@ -586,14 +586,14 @@ function Reset-KrbTgtPassword {
                     Write-Log -Message "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" -Level WARNING
                     Write-Log -Message "" -Level WARNING
                     
-                    if (-not $PSCmdlet.ShouldProcess("PRODUCTION KrbTgt accounts in $TargetDomain", "Reset passwords")) {
+                    if (-not $PSCmdlet.ShouldProcess("PRODUCTION Krbtgt accounts in $TargetDomain", "Reset passwords")) {
                         Write-Log -Message "Operation cancelled" -Level WARNING
                         return
                     }
                     
                     # Multiple confirmations for production
                     if (-not $ContinueOnWarning) {
-                        Write-Log -Message "This will reset PRODUCTION KrbTgt account passwords!" -Level WARNING
+                        Write-Log -Message "This will reset PRODUCTION Krbtgt account passwords!" -Level WARNING
                         Write-Log -Message "This will cause ALL Kerberos tickets to be invalidated!" -Level WARNING
                         Write-Log -Message "Users and services will need to re-authenticate!" -Level WARNING
                         Write-Log -Message "" -Level WARNING
@@ -623,9 +623,9 @@ function Reset-KrbTgtPassword {
                     if ($Scope -eq "AllRWDCs") {
                         Write-Log -Message "Resetting krbtgt password..." -Level WARNING
                         
-                        $resetResult = Set-KrbTgtPassword `
+                        $resetResult = Set-KrbtgtPassword `
                             -TargetedDomainRWDCFQDN $targetRWDCFQDN `
-                            -KrbTgtSamAccountName "krbtgt" `
+                            -KrbtgtSamAccountName "krbtgt" `
                             -IsLocalForest $localADForest `
                             -Credential $adminCreds
                         
@@ -676,10 +676,10 @@ function Reset-KrbTgtPassword {
                                     -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                     -searchBase $domainDN `
                                     -searchFilter "(&(objectClass=computer)(dNSHostName=$($rodc.HostName)))" `
-                                    -PropertiesToLoad @("msDS-KrbTgtLink")
+                                    -PropertiesToLoad @("msDS-KrbtgtLink")
                                 
-                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbTgtLink') {
-                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbTgtLink'
+                                if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbtgtLink') {
+                                    $krbTgtDN = $rodcComputerObj.'msDS-KrbtgtLink'
                                     $krbTgtObj = Find-LdapObject `
                                         -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                                         -searchBase $krbTgtDN `
@@ -692,9 +692,9 @@ function Reset-KrbTgtPassword {
                                         
                                         Write-Log -Message "Resetting $prodAccountName for RODC $($rodc.HostName)..." -Level WARNING
                                         
-                                        $resetResult = Set-KrbTgtPassword `
+                                        $resetResult = Set-KrbtgtPassword `
                                             -TargetDC $targetRWDCFQDN `
-                                            -KrbTgtAccountName $prodAccountName `
+                                            -KrbtgtAccountName $prodAccountName `
                                             -Credential $adminCreds
                                         
                                         if ($resetResult.Success) {
@@ -727,7 +727,7 @@ function Reset-KrbTgtPassword {
     }
     
     end {
-        Write-Verbose "Reset-KrbTgtPassword: END block"
+        Write-Verbose "Reset-KrbtgtPassword: END block"
         
         Write-Log -Message "" -Level INFO
         Write-Log -Message "===========================================================================" -Level MAINHEADER

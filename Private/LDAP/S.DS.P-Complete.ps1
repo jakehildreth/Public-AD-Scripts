@@ -166,7 +166,7 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #When we perform many searches, it is more effective to use the same conbnection rather than create new connection for each search request.
         $LdapConnection = $script:LdapConnection,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
         [String]
             #Search filter in LDAP syntax
         $searchFilter,
@@ -176,20 +176,20 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #DN of container where to search
         $searchBase,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.SearchScope]
             #Search scope
             #Ignored for DirSync searches
             #Default: Subtree
         $searchScope='Subtree',
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [String[]]
             #List of properties we want to return for objects we find.
             #Default: empty array, meaning no properties are returned
         $PropertiesToLoad=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [String]
             #Name of attribute for ASQ search.
             #Ignored for DirSync searches
@@ -197,14 +197,14 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Default: empty string
         $ASQ,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [UInt32]
             #Page size for paged search. Zero means that paging is disabled
             #Ignored for DirSync searches
             #Default: 500
         $PageSize=500,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [Int32]
             # Specification of attribute value retrieval mode
             # Negative value means that attribute values are loaded directly with list of objects
@@ -216,13 +216,13 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             # IMPORTANT: default changed in v2.1.1 - previously it was 1000. Changed because it typically caused large perforrmance impact when using -PropsToLoad '*'
         $RangeSize=-1,
 
-        [parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [Int32]
             #Max number of results to return from the search
             #Negative number means that all available results are returned
             #Ignored for DirSync searches
         $SizeLimit = -1,
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [alias('BinaryProperties')]
         [String[]]
             #List of properties that we want to load as byte stream.
@@ -231,7 +231,7 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Default: empty list, which means that all properties are loaded as strings
         $BinaryProps=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [String[]]
             <#
             List of properties that we want to be defined on output object, but we do not want to load them from AD.
@@ -242,18 +242,18 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #>
         $AdditionalProperties=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.DirectoryControl[]]
             #additional controls that caller may need to add to request
         $AdditionalControls=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [Timespan]
             #Number of seconds before request times out.
             #Default: [TimeSpan]::Zero, which means that no specific timeout provided
         $Timeout = [TimeSpan]::Zero,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [ValidateSet('None','Standard','ObjectSecurity','StandardIncremental','ObjectSecurityIncremental')]
         [string]
             #whether to issue search with DirSync. Allowed options:
@@ -760,24 +760,24 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
 #>
     Param
     (
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [String[]]
             #LDAP server name
             #Default: default server given by environment
         $LdapServer=[String]::Empty,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [Int32]
             #LDAP server port
             #Default: 389
         $Port=389,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [PSCredential]
             #Use different credentials when connecting
         $Credential=$null,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [ValidateSet('None','TLS','SSL','Kerberos')]
         [string]
             #Type of encryption to use.
@@ -791,7 +791,7 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
         #enable support for UDP transport
         $ConnectionLess,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [Timespan]
             #Time before connection times out.
             #Default: 120 seconds
@@ -979,7 +979,7 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Properties to ignore on source object
         $IgnoredProps=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [String[]]
             #List of properties that we want to handle as byte stream.
             #Note: Properties not listed here are handled as strings
@@ -991,12 +991,12 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Existing LDAPConnection object.
         $LdapConnection = $script:LdapConnection,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.DirectoryControl[]]
             #Additional controls that caller may need to add to request
         $AdditionalControls=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [Timespan]
             #Time before connection times out.
             #Default: [TimeSpan]::Zero, which means that no specific timeout provided
@@ -1147,7 +1147,7 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Properties to include on source object. If not specified, all props are included
         $IncludedProps=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [String[]]
             #List of properties that we want to handle as byte stream.
             #Note: Those properties must also be present in IncludedProps parameter. Properties not listed here are handled as strings
@@ -1159,7 +1159,7 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Existing LDAPConnection object.
         $LdapConnection = $script:LdapConnection,
 
-        [parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.DirectoryAttributeOperation]
             #Mode of operation
             #Replace: Replaces attribute values on target
@@ -1167,12 +1167,12 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Delete: Removes atribute values from existing values on target
         $Mode=[System.DirectoryServices.Protocols.DirectoryAttributeOperation]::Replace,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.DirectoryControl[]]
             #Additional controls that caller may need to add to request
         $AdditionalControls=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [timespan]
             #Time before request times out.
             #Default: [TimeSpan]::Zero, which means that no specific timeout provided
@@ -1299,12 +1299,12 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Existing LDAPConnection object.
         $LdapConnection = $script:LdapConnection,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.DirectoryControl[]]
             #Additional controls that caller may need to add to request
         $AdditionalControls=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [Switch]
             #Whether or not to use TreeDeleteControl.
         $UseTreeDelete
@@ -1393,12 +1393,12 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
             #Existing LDAPConnection object.
         $LdapConnection = $script:LdapConnection,
 
-        [parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true)]
             #New name of object
         [String]
         $NewName,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
             #DN of new parent
         [String]
         $NewParent,
@@ -1407,7 +1407,7 @@ More about System.DirectoryServices.Protocols: http://msdn.microsoft.com/en-us/l
         [Switch]
         $KeepOldRdn,
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.DirectoryControl[]]
             #Additional controls that caller may need to add to request
         $AdditionalControls=@()
@@ -2229,7 +2229,7 @@ function GetResultsIndirectlyInternal
         [String[]]
         $AdditionalProperties=@(),
 
-        [parameter(Mandatory = $false)]
+        [Parameter(Mandatory = $false)]
         [System.DirectoryServices.Protocols.DirectoryControl[]]
             #additional controls that caller may need to add to request
         $AdditionalControls=@(),

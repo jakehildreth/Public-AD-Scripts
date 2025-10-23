@@ -23,8 +23,8 @@ Function Remove-TemporaryCanaryObject {
         None. Logs deletion status via Write-Log.
 
     .NOTES
-        Author: Original function from Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
-        Modified: Extracted to modular structure for Reset-KrbTgtPassword v4.0.0
+        Author: Original function from Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
+        Modified: Extracted to modular structure for Reset-KrbtgtPassword v4.0.0
         Dependencies: Get-LdapConnection, Get-RootDSE, Remove-LdapObject, Find-LdapObject, Write-Log
     #>
     [CmdletBinding()]

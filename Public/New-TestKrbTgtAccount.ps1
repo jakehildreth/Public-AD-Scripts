@@ -1,10 +1,10 @@
-function New-TestKrbTgtAccount {
+function New-TestKrbtgtAccount {
     <#
     .SYNOPSIS
-        Creates TEST/BOGUS KrbTgt accounts for testing purposes
+        Creates TEST/BOGUS Krbtgt accounts for testing purposes
     
     .DESCRIPTION
-        Creates TEST KrbTgt accounts that can be used to test the password reset
+        Creates TEST Krbtgt accounts that can be used to test the password reset
         process without affecting production accounts.
         
         For RWDCs: Creates 'krbtgt_TEST' account
@@ -19,14 +19,22 @@ function New-TestKrbTgtAccount {
         PSCredential for authentication (if targeting remote domain)
     
     .EXAMPLE
-        New-TestKrbTgtAccount -TargetDomain "contoso.com"
+        New-TestKrbtgtAccount -TargetDomain "contoso.com"
         
-        Creates TEST KrbTgt accounts in the contoso.com domain
+        Creates TEST Krbtgt accounts in the contoso.com domain
     
     .EXAMPLE
-        New-TestKrbTgtAccount -TargetDomain "child.contoso.com" -Credential (Get-Credential)
+        New-TestKrbtgtAccount -TargetDomain "child.contoso.com" -Credential (Get-Credential)
         
-        Creates TEST KrbTgt accounts using alternate credentials
+        Creates TEST Krbtgt accounts using alternate credentials
+    
+    .EXAMPLE
+        "contoso.com", "fabrikam.com" | New-TestKrbtgtAccount
+        
+        Creates TEST Krbtgt accounts for multiple domains via pipeline
+    
+    .OUTPUTS
+        None. Creation status is displayed via logging output.
     
     .NOTES
         Requires Domain Admin or Enterprise Admin permissions
@@ -35,19 +43,20 @@ function New-TestKrbTgtAccount {
         RODC TEST accounts are added to "Allowed RODC Password Replication Group"
     
     .LINK
-        Remove-TestKrbTgtAccount
+        Remove-TestKrbtgtAccount
     #>
-    [CmdletBinding(SupportsShouldProcess=$true)]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$TargetDomain,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential
     )
     
     begin {
-        Write-Verbose "New-TestKrbTgtAccount: BEGIN block"
+        Write-Verbose "New-TestKrbtgtAccount: BEGIN block"
         Write-Log -Message "------------------------------------------------------------------------------------------------------------------------------------------------------" -Level HEADER
         Write-Log -Message "CREATE TEST KRBTGT ACCOUNTS (MODE 8)..." -Level HEADER
         Write-Log -Message ""
@@ -63,24 +72,14 @@ function New-TestKrbTgtAccount {
     }
     
     process {
-        Write-Verbose "New-TestKrbTgtAccount: PROCESS block"
+        Write-Verbose "New-TestKrbtgtAccount: PROCESS block"
         
         try {
-            # Ask for confirmation
-            Write-Log -Message "Do you really want to continue and create TEST KrbTgt accounts? [CONTINUE | STOP]: " -Level "ACTION-NO-NEW-LINE"
-            $continueOrStop = Read-Host
-            
-            if ($continueOrStop.ToUpper() -ne "CONTINUE") {
-                Write-Log -Message "" -Level REMARK
-                Write-Log -Message "  --> Chosen: STOP" -Level REMARK
-                Write-Log -Message "" -Level WARNING
-                Write-Log -Message "Operation cancelled by user." -Level WARNING
+            # ShouldProcess confirmation replaces Read-Host prompt
+            if (-not $PSCmdlet.ShouldProcess($TargetDomain, "Create TEST Krbtgt accounts")) {
+                Write-Verbose "Operation cancelled by user via ShouldProcess"
                 return
             }
-            
-            Write-Log -Message "" -Level REMARK
-            Write-Log -Message "  --> Chosen: CONTINUE" -Level REMARK
-            Write-Log -Message "" -Level REMARK
             
             # Get domain controllers
             Write-Verbose "Discovering domain controllers in $TargetDomain"
@@ -88,7 +87,13 @@ function New-TestKrbTgtAccount {
             
             if (-not $dcList -or $dcList.Count -eq 0) {
                 Write-Log -Message "No domain controllers found in $TargetDomain" -Level ERROR
-                return
+                $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                    [System.Exception]::new("No domain controllers found in $TargetDomain"),
+                    'NoDomainControllersFound',
+                    [System.Management.Automation.ErrorCategory]::ObjectNotFound,
+                    $TargetDomain
+                )
+                $PSCmdlet.ThrowTerminatingError($errorRecord)
             }
             
             # Find PDC FSMO holder
@@ -96,7 +101,13 @@ function New-TestKrbTgtAccount {
             
             if (-not $pdcFSMO) {
                 Write-Log -Message "Unable to locate PDC FSMO holder in $TargetDomain" -Level ERROR
-                return
+                $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                    [System.Exception]::new("Unable to locate PDC FSMO holder in $TargetDomain"),
+                    'PDCFSMONotFound',
+                    [System.Management.Automation.ErrorCategory]::ObjectNotFound,
+                    $TargetDomain
+                )
+                $PSCmdlet.ThrowTerminatingError($errorRecord)
             }
             
             $targetRWDCFQDN = $pdcFSMO.HostName
@@ -113,21 +124,27 @@ function New-TestKrbTgtAccount {
                 $domainSID = (New-Object System.Security.Principal.SecurityIdentifier($domainObj.objectSid, 0)).Value
             } else {
                 Write-Log -Message "Unable to retrieve domain SID" -Level ERROR
-                return
+                $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                    [System.Exception]::new("Unable to retrieve domain SID for $TargetDomain"),
+                    'DomainSIDNotFound',
+                    [System.Management.Automation.ErrorCategory]::ObjectNotFound,
+                    $TargetDomain
+                )
+                $PSCmdlet.ThrowTerminatingError($errorRecord)
             }
             
             # ===== CREATE RWDC TEST ACCOUNT =====
             Write-Log -Message "+++++" -Level REMARK
-            Write-Log -Message "+++ Create Test KrbTgt Account...: 'krbtgt_TEST' +++" -Level REMARK
+            Write-Log -Message "+++ Create Test Krbtgt Account...: 'krbtgt_TEST' +++" -Level REMARK
             Write-Log -Message "+++ Used By RWDC.................: 'All RWDCs' +++" -Level REMARK
             Write-Log -Message "+++++" -Level REMARK
             Write-Log -Message "" -Level REMARK
             
             if ($PSCmdlet.ShouldProcess("krbtgt_TEST on $targetRWDCFQDN", "Create TEST account")) {
-                New-InternalTestKrbTgtAccount `
+                New-InternalTestKrbtgtAccount `
                     -TargetedADDomainRWDCFQDN $targetRWDCFQDN `
-                    -KrbTgtSamAccountName "krbtgt_TEST" `
-                    -KrbTgtUse "RWDC" `
+                    -KrbtgtSamAccountName "krbtgt_TEST" `
+                    -KrbtgtUse "RWDC" `
                     -TargetedADDomainDomainSID $domainSID `
                     -LocalADForest $localADForest `
                     -AdminCredentials $adminCreds
@@ -140,17 +157,17 @@ function New-TestKrbTgtAccount {
                 $rodcFQDN = $rodc.HostName
                 $rodcSiteName = $rodc.SiteName
                 
-                # Get the RODC's krbtgt account number from msDS-KrbTgtLink attribute
+                # Get the RODC's krbtgt account number from msDS-KrbtgtLink attribute
                 try {
                     $rodcComputerObj = Find-LdapObject `
                         -LdapConnection $(Get-LdapConnection -LdapServer:$targetRWDCFQDN -EncryptionType Kerberos) `
                         -searchBase $domainDN `
                         -searchFilter "(&(objectClass=computer)(dNSHostName=$rodcFQDN))" `
-                        -PropertiesToLoad @("msDS-KrbTgtLink")
+                        -PropertiesToLoad @("msDS-KrbtgtLink")
                     
-                    if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbTgtLink') {
+                    if ($rodcComputerObj -and $rodcComputerObj.'msDS-KrbtgtLink') {
                         # Extract krbtgt account DN
-                        $krbTgtDN = $rodcComputerObj.'msDS-KrbTgtLink'
+                        $krbTgtDN = $rodcComputerObj.'msDS-KrbtgtLink'
                         
                         # Get the krbtgt account to extract the sAMAccountName
                         $krbTgtObj = Find-LdapObject `
@@ -164,17 +181,17 @@ function New-TestKrbTgtAccount {
                             $krbTgtSamAccountName = $krbTgtObj.sAMAccountName + "_TEST"
                             
                             Write-Log -Message "+++++" -Level REMARK
-                            Write-Log -Message "+++ Create Test KrbTgt Account...: '$krbTgtSamAccountName' +++" -Level REMARK
+                            Write-Log -Message "+++ Create Test Krbtgt Account...: '$krbTgtSamAccountName' +++" -Level REMARK
                             Write-Log -Message "+++ Used By RODC.................: '$rodcFQDN' (Site: $rodcSiteName) +++" -Level REMARK
                             Write-Log -Message "+++++" -Level REMARK
                             Write-Log -Message "" -Level REMARK
                             
                             if ($PSCmdlet.ShouldProcess("$krbTgtSamAccountName on $targetRWDCFQDN", "Create TEST account")) {
-                                New-InternalTestKrbTgtAccount `
+                                New-InternalTestKrbtgtAccount `
                                     -TargetedADDomainRWDCFQDN $targetRWDCFQDN `
-                                    -KrbTgtInUseByDCFQDN $rodcFQDN `
-                                    -KrbTgtSamAccountName $krbTgtSamAccountName `
-                                    -KrbTgtUse "RODC" `
+                                    -KrbtgtInUseByDCFQDN $rodcFQDN `
+                                    -KrbtgtSamAccountName $krbTgtSamAccountName `
+                                    -KrbtgtUse "RODC" `
                                     -TargetedADDomainDomainSID $domainSID `
                                     -LocalADForest $localADForest `
                                     -AdminCredentials $adminCreds
@@ -187,17 +204,23 @@ function New-TestKrbTgtAccount {
             }
             
             Write-Log -Message "" -Level REMARK
-            Write-Log -Message "All TEST KrbTgt accounts have been processed." -Level SUCCESS
+            Write-Log -Message "All TEST Krbtgt accounts have been processed." -Level SUCCESS
             Write-Log -Message "" -Level REMARK
         }
         catch {
             Write-Log -Message "ERROR creating TEST accounts: $_" -Level ERROR
-            throw
+            $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                $_.Exception,
+                'TestAccountCreationFailed',
+                [System.Management.Automation.ErrorCategory]::NotSpecified,
+                $TargetDomain
+            )
+            $PSCmdlet.ThrowTerminatingError($errorRecord)
         }
     }
     
     end {
-        Write-Verbose "New-TestKrbTgtAccount: END block"
+        Write-Verbose "New-TestKrbtgtAccount: END block"
         Write-Log -Message "------------------------------------------------------------------------------------------------------------------------------------------------------" -Level HEADER
     }
 }

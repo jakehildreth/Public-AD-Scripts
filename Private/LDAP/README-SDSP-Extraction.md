@@ -6,7 +6,7 @@ Successfully extracted the complete S.DS.P (System.DirectoryServices.Protocols) 
 
 ### Extraction Details
 
-**Source:** `Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1` (Lines 525-3039)  
+**Source:** `Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1` (Lines 525-3039)  
 **Destination:** `Private\LDAP\S.DS.P-Complete.ps1`  
 **Size:** 2,515 lines | 104,575 bytes  
 **Module Version:** v2.1.5 (2022-09-20)  
@@ -63,7 +63,7 @@ The S.DS.P functions are:
 
 ```powershell
 # Module loads successfully
-Import-Module Reset-KrbTgtPassword -Verbose
+Import-Module Reset-KrbtgtPassword -Verbose
 # Output: Module loaded successfully, S.DS.P functions loaded
 
 # S.DS.P functions are available internally
@@ -102,14 +102,14 @@ Get-LdapConnection -LdapServer "test.local"
 
 The following functions (to be extracted) will use S.DS.P:
 
-- **Get-KrbTgtAccountInfo** - Find KrbTgt accounts
-- **Set-KrbTgtPassword** - Reset account passwords (uses Edit-LdapObject)
+- **Get-KrbtgtAccountInfo** - Find Krbtgt accounts
+- **Set-KrbtgtPassword** - Reset account passwords (uses Edit-LdapObject)
 - **Get-ADDomainControllers** - Enumerate DCs via LDAP
 - **Get-ObjectMetadata** - Query object metadata
 - **Test-ADReplicationConvergence** - Monitor replication via LDAP
 - **Invoke-ADReplication** - Trigger replication
-- **New-InternalTestKrbTgtAccount** - Create test accounts
-- **Remove-InternalTestKrbTgtAccount** - Delete test accounts
+- **New-InternalTestKrbtgtAccount** - Create test accounts
+- **Remove-InternalTestKrbtgtAccount** - Delete test accounts
 - **New-TemporaryCanaryObject** - Create canary test objects
 - **Remove-TemporaryCanaryObject** - Remove canary objects
 
@@ -157,11 +157,11 @@ To test S.DS.P functions are working:
 
 ```powershell
 # Import module
-Import-Module Reset-KrbTgtPassword -Force
+Import-Module Reset-KrbtgtPassword -Force
 
 # Create a test script that uses S.DS.P internally
 $testScript = {
-    Import-Module Reset-KrbTgtPassword -Force
+    Import-Module Reset-KrbtgtPassword -Force
     
     # This will use S.DS.P internally if it's loaded
     try {

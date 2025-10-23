@@ -27,7 +27,7 @@ Function Request-AdminCredentials {
 
 .NOTES
     Original function: requestForAdminCreds
-    Extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3185-3208)
+    Extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3185-3208)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     

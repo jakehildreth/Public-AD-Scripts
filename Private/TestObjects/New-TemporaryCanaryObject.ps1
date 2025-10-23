@@ -5,14 +5,14 @@ Function New-TemporaryCanaryObject {
 
     .DESCRIPTION
         Creates a temporary canary object (contact) in the CN=Users container to test AD replication
-        convergence. The object name includes timestamp and KrbTgt account name for uniqueness.
-        Used to verify replication works before performing actual KrbTgt password reset operations.
+        convergence. The object name includes timestamp and Krbtgt account name for uniqueness.
+        Used to verify replication works before performing actual Krbtgt password reset operations.
 
     .PARAMETER TargetedADDomainRWDCFQDN
         The FQDN of the RWDC where the canary object will be created.
 
-    .PARAMETER KrbTgtSamAccountName
-        The SamAccountName of the KrbTgt account (used to generate unique canary object name).
+    .PARAMETER KrbtgtSamAccountName
+        The SamAccountName of the Krbtgt account (used to generate unique canary object name).
 
     .PARAMETER ExecDateTimeCustom
         Timestamp string to ensure unique canary object names.
@@ -27,8 +27,8 @@ Function New-TemporaryCanaryObject {
         System.String - Returns the DistinguishedName of the created canary object, or $null if creation failed.
 
     .NOTES
-        Author: Original function from Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
-        Modified: Extracted to modular structure for Reset-KrbTgtPassword v4.0.0
+        Author: Original function from Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
+        Modified: Extracted to modular structure for Reset-KrbtgtPassword v4.0.0
         Dependencies: Get-LdapConnection, Get-RootDSE, Add-LdapObject, Find-LdapObject, Write-Log
     #>
     [CmdletBinding()]
@@ -37,7 +37,7 @@ Function New-TemporaryCanaryObject {
         [string]$TargetedADDomainRWDCFQDN,
 
         [Parameter(Mandatory = $true)]
-        [string]$KrbTgtSamAccountName,
+        [string]$KrbtgtSamAccountName,
 
         [Parameter(Mandatory = $true)]
         [string]$ExecDateTimeCustom,
@@ -88,7 +88,7 @@ Function New-TemporaryCanaryObject {
 
     # Generate The Name Of The Temporary Canary Object
     $targetObjectToCheckName = $null
-    $targetObjectToCheckName = "_adReplTempObject_" + $KrbTgtSamAccountName + "_" + $ExecDateTimeCustom
+    $targetObjectToCheckName = "_adReplTempObject_" + $KrbtgtSamAccountName + "_" + $ExecDateTimeCustom
 
     # Specify The Description Of The Temporary Canary Object
     $targetObjectToCheckDescription = "...!!!.TEMP OBJECT TO CHECK AD REPLICATION IMPACT.!!!..."

@@ -38,7 +38,7 @@ Function Test-PowerShellModules {
 
 .NOTES
     Original function: loadPoSHModules
-    Extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3120-3154)
+    Extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3120-3154)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     

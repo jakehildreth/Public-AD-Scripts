@@ -1,10 +1,10 @@
-Function Set-KrbTgtPassword {
+Function Set-KrbtgtPassword {
 <#
 .SYNOPSIS
-    Sets a new password on a KrbTgt account.
+    Sets a new password on a Krbtgt account.
 
 .DESCRIPTION
-    Resets the password of a specified KrbTgt account on a target RWDC.
+    Resets the password of a specified Krbtgt account on a target RWDC.
     This function:
     1. Retrieves the current password metadata before reset
     2. Generates a new complex password
@@ -18,8 +18,8 @@ Function Set-KrbTgtPassword {
 .PARAMETER TargetedDomainRWDCFQDN
     The FQDN of the target RWDC where the password will be reset.
 
-.PARAMETER KrbTgtSamAccountName
-    The sAMAccountName of the KrbTgt account (e.g., "krbtgt" or "krbtgt_12345").
+.PARAMETER KrbtgtSamAccountName
+    The sAMAccountName of the Krbtgt account (e.g., "krbtgt" or "krbtgt_12345").
 
 .PARAMETER IsLocalForest
     Boolean indicating if the target forest is the local forest ($true) or remote ($false).
@@ -33,7 +33,7 @@ Function Set-KrbTgtPassword {
 .OUTPUTS
     Hashtable with the following keys:
     - Success: Boolean indicating if password was changed
-    - DistinguishedName: DN of the KrbTgt account
+    - DistinguishedName: DN of the Krbtgt account
     - SamAccountName: sAMAccountName of the account
     - PreviousPwdSet: Previous password set time
     - NewPwdSet: New password set time
@@ -45,26 +45,26 @@ Function Set-KrbTgtPassword {
     - NewVersion: New attribute version
 
 .EXAMPLE
-    $result = Set-KrbTgtPassword -TargetedDomainRWDCFQDN "dc01.contoso.com" -KrbTgtSamAccountName "krbtgt" -IsLocalForest $true
+    $result = Set-KrbtgtPassword -TargetedDomainRWDCFQDN "dc01.contoso.com" -KrbtgtSamAccountName "krbtgt" -IsLocalForest $true
     if ($result.Success) {
         Write-Host "Password reset successful. New pwd set time: $($result.NewPwdSet)"
     }
     
-    Resets the password for the production KrbTgt account.
+    Resets the password for the production Krbtgt account.
 
 .EXAMPLE
     $creds = Get-Credential
-    $result = Set-KrbTgtPassword -TargetedDomainRWDCFQDN "dc01.fabrikam.com" -KrbTgtSamAccountName "krbtgt_12345" -IsLocalForest $false -Credential $creds
+    $result = Set-KrbtgtPassword -TargetedDomainRWDCFQDN "dc01.fabrikam.com" -KrbtgtSamAccountName "krbtgt_12345" -IsLocalForest $false -Credential $creds
     
-    Resets password for an RODC KrbTgt account in a remote forest.
+    Resets password for an RODC Krbtgt account in a remote forest.
 
 .NOTES
     Original function: setPasswordOfADAccount
-    Extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3431-3615)
+    Extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3431-3615)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     
-    This function performs the actual password reset operation on the KrbTgt account.
+    This function performs the actual password reset operation on the Krbtgt account.
     It uses LDAP operations via the S.DS.P module to avoid dependency on ActiveDirectory module.
 #>
     [CmdletBinding()]
@@ -76,7 +76,7 @@ Function Set-KrbTgtPassword {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string]$KrbTgtSamAccountName,
+        [string]$KrbtgtSamAccountName,
 
         [Parameter(Mandatory = $true)]
         [bool]$IsLocalForest,
@@ -93,7 +93,7 @@ Function Set-KrbTgtPassword {
         $result = @{
             Success = $false
             DistinguishedName = $null
-            SamAccountName = $KrbTgtSamAccountName
+            SamAccountName = $KrbtgtSamAccountName
             PreviousPwdSet = $null
             NewPwdSet = $null
             PreviousOriginatingRWDC = $null
@@ -118,15 +118,15 @@ Function Set-KrbTgtPassword {
             # Get search base
             $searchBase = (Get-RootDSE -LdapConnection $ldapConn).defaultNamingContext.distinguishedName
 
-            # BEFORE: Retrieve KrbTgt object
-            Write-Log -Message "Retrieving KrbTgt account '$KrbTgtSamAccountName' from '$TargetedDomainRWDCFQDN'..." -Level INFO
+            # BEFORE: Retrieve Krbtgt object
+            Write-Log -Message "Retrieving Krbtgt account '$KrbtgtSamAccountName' from '$TargetedDomainRWDCFQDN'..." -Level INFO
             $krbTgtBefore = Find-LdapObject -LdapConnection $ldapConn `
                 -searchBase $searchBase `
-                -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbTgtSamAccountName))" `
+                -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbtgtSamAccountName))" `
                 -PropertiesToLoad @("distinguishedName", "pwdLastSet")
 
             if (-not $krbTgtBefore) {
-                throw "KrbTgt account '$KrbTgtSamAccountName' not found on '$TargetedDomainRWDCFQDN'"
+                throw "Krbtgt account '$KrbtgtSamAccountName' not found on '$TargetedDomainRWDCFQDN'"
             }
 
             $result.DistinguishedName = $krbTgtBefore.distinguishedName
@@ -144,7 +144,7 @@ Function Set-KrbTgtPassword {
             $result.PreviousVersion = $pwdLastSetMetaBefore.Version
 
             Write-Log -Message "  --> RWDC: '$TargetedDomainRWDCFQDN'" -Level REMARK
-            Write-Log -Message "  --> sAMAccountName: '$KrbTgtSamAccountName'" -Level REMARK
+            Write-Log -Message "  --> sAMAccountName: '$KrbtgtSamAccountName'" -Level REMARK
             Write-Log -Message "  --> Distinguished Name: '$($result.DistinguishedName)'" -Level REMARK
             Write-Log -Message "  --> Password Length: '$PasswordLength' characters" -Level REMARK
 
@@ -153,7 +153,7 @@ Function Set-KrbTgtPassword {
             Write-Log -Message "Generated new complex password" -Level SUCCESS
 
             # Set the password
-            Write-Log -Message "Setting new password on KrbTgt account..." -Level INFO
+            Write-Log -Message "Setting new password on Krbtgt account..." -Level INFO
             $krbTgtObj = [PSCustomObject]@{
                 distinguishedName = $krbTgtBefore.distinguishedName
                 unicodePwd = $newPassword
@@ -161,10 +161,10 @@ Function Set-KrbTgtPassword {
 
             Edit-LdapObject -LdapConnection $ldapConn -Mode Replace -Object $krbTgtObj -BinaryProps unicodePwd
 
-            # AFTER: Retrieve KrbTgt object again
+            # AFTER: Retrieve Krbtgt object again
             $krbTgtAfter = Find-LdapObject -LdapConnection $ldapConn `
                 -searchBase $searchBase `
-                -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbTgtSamAccountName))" `
+                -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbtgtSamAccountName))" `
                 -PropertiesToLoad @("distinguishedName", "pwdLastSet")
 
             $result.NewPwdSet = Get-Date $([datetime]::fromfiletime($krbTgtAfter.pwdLastSet)) -f "yyyy-MM-dd HH:mm:ss"
@@ -200,7 +200,7 @@ Function Set-KrbTgtPassword {
             Return $result
         }
         Catch {
-            Write-Log -Message "ERROR: Failed to set password for KrbTgt account: $($_.Exception.Message)" -Level ERROR
+            Write-Log -Message "ERROR: Failed to set password for Krbtgt account: $($_.Exception.Message)" -Level ERROR
             Write-Log -Message "Exception Type: $($_.Exception.GetType().FullName)" -Level ERROR
             Write-Log -Message "Script Line: $($_.InvocationInfo.ScriptLineNumber)" -Level ERROR
             $result.Success = $false

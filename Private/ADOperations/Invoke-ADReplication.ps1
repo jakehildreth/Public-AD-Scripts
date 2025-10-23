@@ -8,7 +8,7 @@ Function Invoke-ADReplication {
     of a specific AD object from a source DC to a target DC. Supports both full object
     replication and secrets-only replication.
     
-    This is critical after KrbTgt password resets to ensure rapid convergence across
+    This is critical after Krbtgt password resets to ensure rapid convergence across
     all domain controllers.
 
 .PARAMETER SourceDCNTDSSettingsObjectDN
@@ -59,7 +59,7 @@ Function Invoke-ADReplication {
 
 .NOTES
     Original function: replicateSingleADObject
-    Extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3619-3717)
+    Extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3619-3717)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     

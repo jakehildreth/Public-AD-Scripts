@@ -1,10 +1,10 @@
-Function Get-KrbTgtAccountInfo {
+Function Get-KrbtgtAccountInfo {
 <#
 .SYNOPSIS
-    Retrieves information about a KrbTgt account.
+    Retrieves information about a Krbtgt account.
 
 .DESCRIPTION
-    Queries AD for a KrbTgt account and returns key properties including:
+    Queries AD for a Krbtgt account and returns key properties including:
     - Distinguished Name
     - sAMAccountName
     - Password Last Set
@@ -14,7 +14,7 @@ Function Get-KrbTgtAccountInfo {
     The FQDN of a domain controller to query.
 
 .PARAMETER SamAccountName
-    The sAMAccountName of the KrbTgt account (e.g., "krbtgt" or "krbtgt_12345").
+    The sAMAccountName of the Krbtgt account (e.g., "krbtgt" or "krbtgt_12345").
 
 .PARAMETER IsLocalForest
     Boolean indicating if the target forest is the local forest.
@@ -26,7 +26,7 @@ Function Get-KrbTgtAccountInfo {
     PSCustomObject with account properties or $null if not found.
 
 .EXAMPLE
-    $info = Get-KrbTgtAccountInfo -DomainRWDCFQDN "dc01.contoso.com" -SamAccountName "krbtgt" -IsLocalForest $true
+    $info = Get-KrbtgtAccountInfo -DomainRWDCFQDN "dc01.contoso.com" -SamAccountName "krbtgt" -IsLocalForest $true
     Write-Host "Last password set: $($info.PwdLastSet)"
 
 .NOTES
@@ -87,7 +87,7 @@ Function Get-KrbTgtAccountInfo {
             Return $null
         }
         Catch {
-            Write-Log -Message "ERROR: Failed to retrieve KrbTgt account info: $($_.Exception.Message)" -Level ERROR
+            Write-Log -Message "ERROR: Failed to retrieve Krbtgt account info: $($_.Exception.Message)" -Level ERROR
             Return $null
         }
     }

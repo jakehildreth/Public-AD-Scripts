@@ -27,7 +27,7 @@ Function Test-AdminRole {
 
 .NOTES
     Original function: testAdminRole
-    Extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3176-3183)
+    Extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3176-3183)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
 #>

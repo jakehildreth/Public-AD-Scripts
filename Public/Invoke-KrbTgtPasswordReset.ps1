@@ -1,10 +1,10 @@
-function Invoke-KrbTgtPasswordReset {
+function Invoke-KrbtgtPasswordReset {
     <#
     .SYNOPSIS
-        Resets KrbTgt account passwords
+        Resets Krbtgt account passwords
     
     .DESCRIPTION
-        Convenience wrapper for Reset-KrbTgtPassword that simplifies the interface.
+        Convenience wrapper for Reset-KrbtgtPassword that simplifies the interface.
         Supports both TEST and PRODUCTION password resets with clear parameter switches.
         
         By default, operates on TEST accounts for safe testing.
@@ -15,14 +15,14 @@ function Invoke-KrbTgtPasswordReset {
         FQDN of target Active Directory domain
     
     .PARAMETER Scope
-        Scope of KrbTgt accounts to target
+        Scope of Krbtgt accounts to target
         Valid values: AllRWDCs, AllRODCs, SpecificRODCs
     
     .PARAMETER TargetRODCs
         Array of RODC FQDNs when Scope is SpecificRODCs
     
     .PARAMETER Production
-        Reset PRODUCTION KrbTgt accounts (LIVE IMPACT!)
+        Reset PRODUCTION Krbtgt accounts (LIVE IMPACT!)
         If not specified, resets TEST accounts only (safe)
     
     .PARAMETER Credential
@@ -31,28 +31,36 @@ function Invoke-KrbTgtPasswordReset {
     .PARAMETER ContinueOnWarning
         Continue without confirmation prompts (for automated runs)
     
+    .OUTPUTS
+        None. Password reset results are displayed via logging output.
+    
     .EXAMPLE
-        Invoke-KrbTgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs
+        Invoke-KrbtgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs
         
         Resets TEST account passwords (safe testing)
     
     .EXAMPLE
-        Invoke-KrbTgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs -WhatIf
+        Invoke-KrbtgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs -WhatIf
         
         Simulates TEST account password reset (no changes)
     
     .EXAMPLE
-        Invoke-KrbTgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs -Production
+        Invoke-KrbtgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs -Production
         
-        Resets PRODUCTION KrbTgt passwords (LIVE IMPACT! - requires confirmation)
+        Resets PRODUCTION Krbtgt passwords (LIVE IMPACT! - requires confirmation)
     
     .EXAMPLE
-        Invoke-KrbTgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs -Production -WhatIf
+        Invoke-KrbtgtPasswordReset -TargetDomain "contoso.com" -Scope AllRWDCs -Production -WhatIf
         
         Simulates PRODUCTION password reset (no changes)
     
+    .EXAMPLE
+        "contoso.com", "fabrikam.com" | Invoke-KrbtgtPasswordReset -Scope AllRWDCs
+        
+        Resets TEST accounts for multiple domains via pipeline
+    
     .NOTES
-        This is a convenience wrapper that calls Reset-KrbTgtPassword with appropriate mode.
+        This is a convenience wrapper that calls Reset-KrbtgtPassword with appropriate mode.
         
         Modes used:
         - Default: ResetTest (reset TEST accounts)
@@ -63,72 +71,110 @@ function Invoke-KrbTgtPasswordReset {
         Supports standard PowerShell -WhatIf and -Confirm switches.
     
     .LINK
-        Reset-KrbTgtPassword
-        New-TestKrbTgtAccount
+        Reset-KrbtgtPassword
+        New-TestKrbtgtAccount
     #>
-    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='High')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param(
-        [Parameter(Mandatory=$true, Position=0)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
         [string]$TargetDomain,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [ValidateSet('AllRWDCs', 'AllRODCs', 'SpecificRODCs')]
         [string]$Scope = 'AllRWDCs',
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
         [string[]]$TargetRODCs,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [switch]$Production,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential,
         
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [switch]$ContinueOnWarning
     )
     
-    # Determine the mode based on parameters and -WhatIf preference
-    if ($Production -and $WhatIfPreference) {
-        $mode = 'SimulateProd'
-    }
-    elseif ($Production) {
-        $mode = 'ResetProd'
-    }
-    elseif ($WhatIfPreference) {
-        $mode = 'SimulateTest'
-    }
-    else {
-        $mode = 'ResetTest'
+    begin {
+        Write-Verbose 'Starting Krbtgt password reset process'
     }
     
-    # Build parameter hashtable
-    $params = @{
-        Mode = $mode
-        TargetDomain = $TargetDomain
-        Scope = $Scope
+    process {
+        try {
+            # Determine the mode based on parameters and -WhatIf preference
+            if ($Production -and $WhatIfPreference) {
+                $mode = 'SimulateProd'
+                Write-Verbose 'Mode: SimulateProd (Production WhatIf)'
+            }
+            elseif ($Production) {
+                $mode = 'ResetProd'
+                Write-Verbose 'Mode: ResetProd (Production LIVE RESET)'
+            }
+            elseif ($WhatIfPreference) {
+                $mode = 'SimulateTest'
+                Write-Verbose 'Mode: SimulateTest (Test WhatIf)'
+            }
+            else {
+                $mode = 'ResetTest'
+                Write-Verbose 'Mode: ResetTest (Test account reset)'
+            }
+            
+            Write-Verbose "Resetting Krbtgt passwords for domain: $TargetDomain with scope: $Scope"
+            
+            # Build parameter hashtable
+            $params = @{
+                Mode = $mode
+                TargetDomain = $TargetDomain
+                Scope = $Scope
+            }
+            
+            if ($TargetRODCs) {
+                $params['TargetRODCs'] = $TargetRODCs
+                Write-Verbose "Targeting specific RODCs: $($TargetRODCs -join ', ')"
+            }
+            
+            if ($Credential) {
+                $params['Credential'] = $Credential
+                Write-Verbose 'Using alternate credentials for authentication'
+            }
+            
+            if ($ContinueOnWarning) {
+                $params['ContinueOnWarning'] = $true
+                Write-Verbose 'ContinueOnWarning enabled - will not prompt for confirmations'
+            }
+            
+            # Pass through WhatIf and Confirm preferences
+            if ($PSBoundParameters.ContainsKey('WhatIf')) {
+                $params['WhatIf'] = $WhatIfPreference
+            }
+            
+            if ($PSBoundParameters.ContainsKey('Confirm')) {
+                $params['Confirm'] = $ConfirmPreference
+            }
+            
+            # ShouldProcess check for high-impact operations
+            $target = "$TargetDomain ($Scope)"
+            $action = if ($Production) { 'Reset PRODUCTION Krbtgt passwords' } else { 'Reset TEST Krbtgt passwords' }
+            
+            if ($PSCmdlet.ShouldProcess($target, $action)) {
+                Reset-KrbtgtPassword @params
+            }
+        }
+        catch {
+            $errorRecord = [System.Management.Automation.ErrorRecord]::new(
+                $_.Exception,
+                'KrbtgtPasswordResetFailed',
+                [System.Management.Automation.ErrorCategory]::NotSpecified,
+                $TargetDomain
+            )
+            $PSCmdlet.WriteError($errorRecord)
+        }
     }
     
-    if ($TargetRODCs) {
-        $params['TargetRODCs'] = $TargetRODCs
+    end {
+        Write-Verbose 'Completed Krbtgt password reset process'
     }
-    
-    if ($Credential) {
-        $params['Credential'] = $Credential
-    }
-    
-    if ($ContinueOnWarning) {
-        $params['ContinueOnWarning'] = $true
-    }
-    
-    # Pass through WhatIf and Confirm preferences
-    if ($PSBoundParameters.ContainsKey('WhatIf')) {
-        $params['WhatIf'] = $WhatIfPreference
-    }
-    
-    if ($PSBoundParameters.ContainsKey('Confirm')) {
-        $params['Confirm'] = $ConfirmPreference
-    }
-    
-    Reset-KrbTgtPassword @params
 }

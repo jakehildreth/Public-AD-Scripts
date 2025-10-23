@@ -1,18 +1,18 @@
-Function Remove-InternalTestKrbTgtAccount {
+Function Remove-InternalTestKrbtgtAccount {
     <#
     .SYNOPSIS
-        Deletes a TEST KrbTgt account from Active Directory.
+        Deletes a TEST Krbtgt account from Active Directory.
 
     .DESCRIPTION
-        Removes a test/bogus KrbTgt account (with _TEST suffix) from Active Directory.
-        Used in Mode 9 to clean up test accounts created by New-InternalTestKrbTgtAccount.
+        Removes a test/bogus Krbtgt account (with _TEST suffix) from Active Directory.
+        Used in Mode 9 to clean up test accounts created by New-InternalTestKrbtgtAccount.
         Verifies deletion was successful.
 
     .PARAMETER TargetedADDomainRWDCFQDN
         The FQDN of the RWDC where the TEST account will be deleted.
 
-    .PARAMETER KrbTgtSamAccountName
-        The SamAccountName of the TEST KrbTgt account to delete (must end with _TEST).
+    .PARAMETER KrbtgtSamAccountName
+        The SamAccountName of the TEST Krbtgt account to delete (must end with _TEST).
 
     .PARAMETER LocalADForest
         Boolean indicating whether the target domain is in the local forest.
@@ -24,8 +24,8 @@ Function Remove-InternalTestKrbTgtAccount {
         None. Logs deletion status via Write-Log.
 
     .NOTES
-        Author: Original function from Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
-        Modified: Extracted to modular structure for Reset-KrbTgtPassword v4.0.0
+        Author: Original function from Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 v3.4
+        Modified: Extracted to modular structure for Reset-KrbtgtPassword v4.0.0
         Dependencies: Get-LdapConnection, Get-RootDSE, Remove-LdapObject, Find-LdapObject, Write-Log
     #>
     [CmdletBinding()]
@@ -34,7 +34,7 @@ Function Remove-InternalTestKrbTgtAccount {
         [string]$TargetedADDomainRWDCFQDN,
 
         [Parameter(Mandatory = $true)]
-        [string]$KrbTgtSamAccountName,
+        [string]$KrbtgtSamAccountName,
 
         [Parameter(Mandatory = $true)]
         [bool]$LocalADForest,
@@ -43,15 +43,15 @@ Function Remove-InternalTestKrbTgtAccount {
         [System.Management.Automation.PSCredential]$AdminCredentials
     )
 
-    # Check If The Test/Bogus KrbTgt Account Exists In AD
-    $testKrbTgtObject = $null
+    # Check If The Test/Bogus Krbtgt Account Exists In AD
+    $testKrbtgtObject = $null
     If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
         Try {
             $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-            $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbTgtSamAccountName))"
+            $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbtgtSamAccountName))"
         } Catch {
             Write-Log -Message "" -Level ERROR
-            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'sAMAccountName=$KrbTgtSamAccountName'..." -Level ERROR
+            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'sAMAccountName=$KrbtgtSamAccountName'..." -Level ERROR
             Write-Log -Message "" -Level ERROR
             Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
             Write-Log -Message "" -Level ERROR
@@ -65,10 +65,10 @@ Function Remove-InternalTestKrbTgtAccount {
     If ($LocalADForest -eq $false -And $AdminCredentials) {
         Try {
             $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
-            $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbTgtSamAccountName))"
+            $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$KrbtgtSamAccountName))"
         } Catch {
             Write-Log -Message "" -Level ERROR
-            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object 'sAMAccountName=$KrbTgtSamAccountName'..." -Level ERROR
+            Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object 'sAMAccountName=$KrbtgtSamAccountName'..." -Level ERROR
             Write-Log -Message "" -Level ERROR
             Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
             Write-Log -Message "" -Level ERROR
@@ -78,18 +78,18 @@ Function Remove-InternalTestKrbTgtAccount {
             Write-Log -Message "" -Level ERROR
         }
     }
-    If ($testKrbTgtObject) {
+    If ($testKrbtgtObject) {
         # If It Does Exist In AD
-        $testKrbTgtObjectDN = $testKrbTgtObject.DistinguishedName
+        $testKrbtgtObjectDN = $testKrbtgtObject.DistinguishedName
         Write-Log -Message "  --> RWDC To Delete Object On..............: '$TargetedADDomainRWDCFQDN'"
-        Write-Log -Message "  --> Test KrbTgt Account DN................: '$testKrbTgtObjectDN'"
+        Write-Log -Message "  --> Test Krbtgt Account DN................: '$testKrbtgtObjectDN'"
         Write-Log -Message ""
         If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
             Try {
-                Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbTgtObjectDN
+                Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbtgtObjectDN
             } Catch {
                 Write-Log -Message "" -Level ERROR
-                Write-Log -Message "Error Deleting User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbTgtObjectDN'..." -Level ERROR
+                Write-Log -Message "Error Deleting User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbtgtObjectDN'..." -Level ERROR
                 Write-Log -Message "" -Level ERROR
                 Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                 Write-Log -Message "" -Level ERROR
@@ -101,10 +101,10 @@ Function Remove-InternalTestKrbTgtAccount {
         }
         If ($LocalADForest -eq $false -And $AdminCredentials) {
             Try {
-                Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Object $testKrbTgtObjectDN
+                Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -Object $testKrbtgtObjectDN
             } Catch {
                 Write-Log -Message "" -Level ERROR
-                Write-Log -Message "Error Deleting User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbTgtObjectDN' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+                Write-Log -Message "Error Deleting User On '$TargetedADDomainRWDCFQDN' For Object '$testKrbtgtObjectDN' Using '$($AdminCredentials.UserName)'..." -Level ERROR
                 Write-Log -Message "" -Level ERROR
                 Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                 Write-Log -Message "" -Level ERROR
@@ -114,14 +114,14 @@ Function Remove-InternalTestKrbTgtAccount {
                 Write-Log -Message "" -Level ERROR
             }
         }
-        $testKrbTgtObject = $null
+        $testKrbtgtObject = $null
         If ($LocalADForest -eq $true -Or ($LocalADForest -eq $false -And !$AdminCredentials)) {
             Try {
                 $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-                $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)"
+                $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)"
             } Catch {
                 Write-Log -Message "" -Level ERROR
-                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN'..." -Level ERROR
+                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN'..." -Level ERROR
                 Write-Log -Message "" -Level ERROR
                 Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                 Write-Log -Message "" -Level ERROR
@@ -134,10 +134,10 @@ Function Remove-InternalTestKrbTgtAccount {
         If ($LocalADForest -eq $false -And $AdminCredentials) {
             Try {
                 $targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials)).defaultNamingContext.distinguishedName
-                $testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)"
+                $testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$TargetedADDomainRWDCFQDN -EncryptionType Kerberos -Credential $AdminCredentials) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)"
             } Catch {
                 Write-Log -Message "" -Level ERROR
-                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN' Using '$($AdminCredentials.UserName)'..." -Level ERROR
+                Write-Log -Message "Error Querying AD Against '$TargetedADDomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN' Using '$($AdminCredentials.UserName)'..." -Level ERROR
                 Write-Log -Message "" -Level ERROR
                 Write-Log -Message "Exception Type......: $($_.Exception.GetType().FullName)" -Level ERROR
                 Write-Log -Message "" -Level ERROR
@@ -147,17 +147,17 @@ Function Remove-InternalTestKrbTgtAccount {
                 Write-Log -Message "" -Level ERROR
             }
         }
-        If (!$testKrbTgtObject) {
-            Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] DELETED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level REMARK
+        If (!$testKrbtgtObject) {
+            Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] DELETED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level REMARK
             Write-Log -Message "" -Level REMARK
         } Else {
-            Write-Log -Message "  --> Test KrbTgt Account [$testKrbTgtObjectDN] FAILED TO BE DELETED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level ERROR
-            Write-Log -Message "  --> Manually delete the Test KrbTgt Account [$testKrbTgtObjectDN] on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level ERROR
+            Write-Log -Message "  --> Test Krbtgt Account [$testKrbtgtObjectDN] FAILED TO BE DELETED on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level ERROR
+            Write-Log -Message "  --> Manually delete the Test Krbtgt Account [$testKrbtgtObjectDN] on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level ERROR
             Write-Log -Message "" -Level ERROR
         }
     } Else {
         # If It Does Not Exist In AD
-        Write-Log -Message "  --> Test KrbTgt Account [sAMAccountName=$KrbTgtSamAccountName] DOES NOT EXIST on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level WARNING
+        Write-Log -Message "  --> Test Krbtgt Account [sAMAccountName=$KrbtgtSamAccountName] DOES NOT EXIST on RWDC [$TargetedADDomainRWDCFQDN]!..." -Level WARNING
         Write-Log -Message "" -Level WARNING
     }
 }

@@ -53,7 +53,7 @@ Function Test-ADForestAccess {
     Validates access to a remote forest with credentials.
 
 .NOTES
-    Original logic extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 5696-5870)
+    Original logic extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 5696-5870)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     

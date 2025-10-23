@@ -31,12 +31,12 @@ Function Test-LocalElevation {
 
 .NOTES
     Original function: checkLocalElevationStatus
-    Extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3159-3174)
+    Extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3159-3174)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     
     This function is critical for ensuring the script has necessary permissions
-    to perform KrbTgt password resets and other AD operations.
+    to perform Krbtgt password resets and other AD operations.
 #>
     [CmdletBinding()]
     [OutputType([string])]

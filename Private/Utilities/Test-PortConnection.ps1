@@ -32,10 +32,10 @@ function Test-PortConnection {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ComputerName,
         
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int]$Port,
         
         [Parameter()]

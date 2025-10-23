@@ -1,7 +1,7 @@
 #
-# Root module file for Reset-KrbTgtPassword
+# Root module file for Reset-KrbtgtPassword
 #
-# This module provides comprehensive KrbTgt password reset capabilities for Active Directory
+# This module provides comprehensive Krbtgt password reset capabilities for Active Directory
 #
 
 #Requires -Version 5.1
@@ -99,12 +99,12 @@ Get-ChildItem -Path "$PSScriptRoot\Public\*.ps1" -ErrorAction SilentlyContinue |
 
 # Export only public functions
 Export-ModuleMember -Function @(
-    'Reset-KrbTgtPassword',
-    'New-TestKrbTgtAccount',
-    'Remove-TestKrbTgtAccount',
-    'Get-KrbTgtInfo',
+    'Reset-KrbtgtPassword',
+    'New-TestKrbtgtAccount',
+    'Remove-TestKrbtgtAccount',
+    'Get-KrbtgtInfo',
     'Test-ADReplication',
-    'Invoke-KrbTgtPasswordReset'
+    'Invoke-KrbtgtPasswordReset'
 )
 
-Write-Verbose "Reset-KrbTgtPassword module loaded successfully"
+Write-Verbose "Reset-KrbtgtPassword module loaded successfully"

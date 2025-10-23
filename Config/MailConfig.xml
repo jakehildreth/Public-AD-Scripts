@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resetKrbTgtPassword xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<resetKrbtgtPassword xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 	<!-- ====================================================================== -->
 	<!-- SMTP SERVER CONFIGURATION -->
 	<!-- ====================================================================== -->
@@ -27,7 +27,7 @@
 	<!-- ====================================================================== -->
 	
 	<!-- Mail Subject To Use -->
-	<mailSubject>KrbTgt Password Reset Result</mailSubject>
+	<mailSubject>Krbtgt Password Reset Result</mailSubject>
 
 	<!-- The Priority Of The Message: Low, Normal, High -->
 	<mailPriority>High</mailPriority>
@@ -37,7 +37,7 @@
 &lt;!DOCTYPE html&gt;
 &lt;html&gt;
 &lt;head&gt;
-&lt;title&gt;KrbTgt Password Reset Report&lt;/title&gt;
+&lt;title&gt;Krbtgt Password Reset Report&lt;/title&gt;
 &lt;style type="text/css"&gt;
 body { font-family: Arial, sans-serif; }
 .header { font-size: 24pt; color: red; font-weight: bold; text-align: center; }
@@ -50,7 +50,7 @@ body { font-family: Arial, sans-serif; }
 &lt;br&gt;
 &lt;p class="info"&gt;Hello,&lt;/p&gt;
 &lt;br&gt;
-&lt;p class="info"&gt;The KrbTgt password reset operation has completed.&lt;/p&gt;
+&lt;p class="info"&gt;The Krbtgt password reset operation has completed.&lt;/p&gt;
 &lt;p class="info"&gt;Please review the attached log file for detailed results.&lt;/p&gt;
 &lt;br&gt;
 &lt;p class="info"&gt;Best regards,&lt;br&gt;Active Directory Operations&lt;/p&gt;
@@ -131,4 +131,4 @@ body { font-family: Arial, sans-serif; }
 	<!-- Only used when mailSignAndEncryptCertLocation is PFX -->
 	<mailSignAndEncryptCertPFXPassword></mailSignAndEncryptCertPFXPassword>
 
-</resetKrbTgtPassword>
+</resetKrbtgtPassword>

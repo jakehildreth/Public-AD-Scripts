@@ -40,7 +40,7 @@ Function Get-ObjectMetadata {
     Write-Host "Last password change: $($pwdLastSet.LastOriginatingChangeTime)"
     Write-Host "Originating DC: $($pwdLastSet.OriginatingServer)"
     
-    Retrieves metadata for the KrbTgt account and displays password change info.
+    Retrieves metadata for the Krbtgt account and displays password change info.
 
 .EXAMPLE
     $creds = Get-Credential
@@ -50,7 +50,7 @@ Function Get-ObjectMetadata {
 
 .NOTES
     Original function: retrieveObjectMetadata
-    Extracted from: Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3394-3429)
+    Extracted from: Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 (lines 3394-3429)
     Author: Jorge de Almeida Pinto
     Version: 4.0.0
     

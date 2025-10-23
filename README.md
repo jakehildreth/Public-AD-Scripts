@@ -1,7 +1,7 @@
-# Reset-KrbTgtPassword PowerShell Module
+# Reset-KrbtgtPassword PowerShell Module
 
 ## Overview
-This PowerShell module provides comprehensive KrbTgt password reset capabilities for both Read/Write Domain Controllers (RWDCs) and Read-Only Domain Controllers (RODCs) in Active Directory environments.
+This PowerShell module provides comprehensive Krbtgt password reset capabilities for both Read/Write Domain Controllers (RWDCs) and Read-Only Domain Controllers (RODCs) in Active Directory environments.
 
 **Version:** 4.0.0  
 **Status:** ✅ **PRODUCTION READY** (100% Complete)  
@@ -22,14 +22,14 @@ This PowerShell module provides comprehensive KrbTgt password reset capabilities
 ## Module Structure
 
 ```
-Reset-KrbTgtPassword/
-├── Reset-KrbTgtPassword.psd1            # Module manifest
-├── Reset-KrbTgtPassword.psm1            # Root module file
+Reset-KrbtgtPassword/
+├── Reset-KrbtgtPassword.psd1            # Module manifest
+├── Reset-KrbtgtPassword.psm1            # Root module file
 ├── README.md                            # This file
 ├── Public/                              # Exported functions
-│   ├── Reset-KrbTgtPassword.ps1         # Main orchestration function (Modes 1-6)
-│   ├── New-TestKrbTgtAccount.ps1        # Create test accounts (Mode 8)
-│   └── Remove-TestKrbTgtAccount.ps1     # Remove test accounts (Mode 9)
+│   ├── Reset-KrbtgtPassword.ps1         # Main orchestration function (Modes 1-6)
+│   ├── New-TestKrbtgtAccount.ps1        # Create test accounts (Mode 8)
+│   └── Remove-TestKrbtgtAccount.ps1     # Remove test accounts (Mode 9)
 ├── Private/                             # Internal helper functions
 │   ├── Utilities/
 │   │   ├── Write-Log.ps1
@@ -47,8 +47,8 @@ Reset-KrbTgtPassword/
 │   │   ├── Test-ADDomainValidity.ps1
 │   │   └── Test-PowerShellModules.ps1
 │   ├── ADOperations/
-│   │   ├── Get-KrbTgtAccountInfo.ps1
-│   │   ├── Set-KrbTgtPassword.ps1
+│   │   ├── Get-KrbtgtAccountInfo.ps1
+│   │   ├── Set-KrbtgtPassword.ps1
 │   │   ├── Get-ADDomainControllers.ps1
 │   │   ├── Get-ObjectMetadata.ps1
 │   │   ├── Test-ADReplicationConvergence.ps1
@@ -56,14 +56,14 @@ Reset-KrbTgtPassword/
 │   ├── TestObjects/
 │   │   ├── New-TemporaryCanaryObject.ps1
 │   │   ├── Remove-TemporaryCanaryObject.ps1
-│   │   ├── New-InternalTestKrbTgtAccount.ps1
-│   │   └── Remove-InternalTestKrbTgtAccount.ps1
+│   │   ├── New-InternalTestKrbtgtAccount.ps1
+│   │   └── Remove-InternalTestKrbtgtAccount.ps1
 │   └── LDAP/
 │       └── [S.DS.P module functions - extracted from original script]
 ├── Config/
 │   └── MailConfig.xml                  # Email configuration template
 └── en-US/
-    └── about_Reset-KrbTgtPassword.help.txt
+    └── about_Reset-KrbtgtPassword.help.txt
 ```
 
 ## Installation
@@ -71,16 +71,16 @@ Reset-KrbTgtPassword/
 ### Option 1: Manual Installation
 ```powershell
 # Copy the module folder to a PowerShell module path
-Copy-Item -Path ".\Reset-KrbTgtPassword" -Destination "$env:ProgramFiles\WindowsPowerShell\Modules\" -Recurse
+Copy-Item -Path ".\Reset-KrbtgtPassword" -Destination "$env:ProgramFiles\WindowsPowerShell\Modules\" -Recurse
 
 # Import the module
-Import-Module Reset-KrbTgtPassword
+Import-Module Reset-KrbtgtPassword
 ```
 
 ### Option 2: Import from Current Location
 ```powershell
 # Import directly from the module folder
-Import-Module "C:\Path\To\Reset-KrbTgtPassword\Reset-KrbTgtPassword.psd1"
+Import-Module "C:\Path\To\Reset-KrbtgtPassword\Reset-KrbtgtPassword.psd1"
 ```
 
 ## Usage
@@ -88,27 +88,27 @@ Import-Module "C:\Path\To\Reset-KrbTgtPassword\Reset-KrbTgtPassword.psd1"
 ### Interactive Mode (Recommended for first-time users)
 ```powershell
 # Run the main function interactively
-Reset-KrbTgtPassword
+Reset-KrbtgtPassword
 ```
 
 ### Mode 1: Informational Mode (No Changes)
 ```powershell
-Reset-KrbTgtPassword -Mode Info -TargetDomain "contoso.com"
+Reset-KrbtgtPassword -Mode Info -TargetDomain "contoso.com"
 ```
 
 ### Mode 2: Simulation with Canary Object
 ```powershell
-Reset-KrbTgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
+Reset-KrbtgtPassword -Mode SimulateCanary -TargetDomain "contoso.com" -Scope AllRWDCs
 ```
 
 ### Mode 6: Production Password Reset (LIVE IMPACT!)
 ```powershell
-Reset-KrbTgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -Confirm
+Reset-KrbtgtPassword -Mode ResetProd -TargetDomain "contoso.com" -Scope AllRWDCs -Confirm
 ```
 
 ### Automated Execution with Email Notification
 ```powershell
-Reset-KrbTgtPassword `
+Reset-KrbtgtPassword `
     -Mode ResetProd `
     -TargetForest "contoso.com" `
     -TargetDomain "subdomain.contoso.com" `
@@ -120,7 +120,7 @@ Reset-KrbTgtPassword `
 
 ## Operation Modes
 
-### Reset-KrbTgtPassword Modes
+### Reset-KrbtgtPassword Modes
 
 | Mode | Parameter Value | Description | Impact |
 |------|----------------|-------------|---------|
@@ -135,13 +135,13 @@ Reset-KrbTgtPassword `
 
 | Function | Description | Impact |
 |----------|-------------|--------|
-| `New-TestKrbTgtAccount` | Create TEST/BOGUS accounts | Creates test accounts |
-| `Remove-TestKrbTgtAccount` | Remove TEST/BOGUS accounts | Removes test accounts |
+| `New-TestKrbtgtAccount` | Create TEST/BOGUS accounts | Creates test accounts |
+| `Remove-TestKrbtgtAccount` | Remove TEST/BOGUS accounts | Removes test accounts |
 
 ## Public Functions
 
-### Reset-KrbTgtPassword
-Main function that orchestrates all KrbTgt password reset operations.
+### Reset-KrbtgtPassword
+Main function that orchestrates all Krbtgt password reset operations.
 
 **Parameters:**
 - `Mode` - Operation mode (Info, SimulateCanary, SimulateTest, ResetTest, SimulateProd, ResetProd)
@@ -152,15 +152,15 @@ Main function that orchestrates all KrbTgt password reset operations.
 - `SendEmailReport` - Send log file via email
 - `ContinueOnWarning` - Continue without confirmation prompts
 
-### New-TestKrbTgtAccount
-Creates TEST/BOGUS KrbTgt accounts for testing purposes.
+### New-TestKrbtgtAccount
+Creates TEST/BOGUS Krbtgt accounts for testing purposes.
 
 **Parameters:**
 - `TargetDomain` - FQDN of target AD domain
 - `Credential` - PSCredential for authentication
 
-### Remove-TestKrbTgtAccount
-Removes TEST/BOGUS KrbTgt accounts.
+### Remove-TestKrbtgtAccount
+Removes TEST/BOGUS Krbtgt accounts.
 
 **Parameters:**
 - `TargetDomain` - FQDN of target AD domain
@@ -208,14 +208,14 @@ The module maintains 100% backward compatibility with the original script parame
 
 ```powershell
 # Original script syntax still works:
-.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 `
-    -modeOfOperation "resetModeKrbTgtProdAccountsResetOnce" `
+.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 `
+    -modeOfOperation "resetModeKrbtgtProdAccountsResetOnce" `
     -targetedADdomainFQDN "contoso.com" `
-    -targetKrbTgtAccountScope "allRWDCs" `
+    -targetKrbtgtAccountScope "allRWDCs" `
     -continueOps
 
 # New module syntax (recommended):
-Reset-KrbTgtPassword `
+Reset-KrbtgtPassword `
     -Mode ResetProd `
     -TargetDomain "contoso.com" `
     -Scope AllRWDCs `
@@ -227,10 +227,10 @@ Reset-KrbTgtPassword `
 ### Module Won't Load
 ```powershell
 # Check if module is in correct location
-Get-Module -ListAvailable -Name Reset-KrbTgtPassword
+Get-Module -ListAvailable -Name Reset-KrbtgtPassword
 
 # Import with verbose output
-Import-Module Reset-KrbTgtPassword -Verbose
+Import-Module Reset-KrbtgtPassword -Verbose
 ```
 
 ### Permission Issues

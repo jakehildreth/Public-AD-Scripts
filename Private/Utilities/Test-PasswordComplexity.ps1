@@ -34,7 +34,7 @@ function Test-PasswordComplexity {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Password
     )
     

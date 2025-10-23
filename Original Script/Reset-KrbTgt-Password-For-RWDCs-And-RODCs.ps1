@@ -3,12 +3,12 @@
 ###
 Param (
 	[switch]$noInfo,
-	[ValidateSet("infoMode", "simulModeCanaryObject", "simulModeKrbTgtTestAccountsWhatIf", "resetModeKrbTgtTestAccountsResetOnce", "simulModeKrbTgtProdAccountsWhatIf", "resetModeKrbTgtProdAccountsResetOnce")]
+	[ValidateSet("infoMode", "simulModeCanaryObject", "simulModeKrbtgtTestAccountsWhatIf", "resetModeKrbtgtTestAccountsResetOnce", "simulModeKrbtgtProdAccountsWhatIf", "resetModeKrbtgtProdAccountsResetOnce")]
 	[string]$modeOfOperation,
 	[string]$targetedADforestFQDN,
 	[string]$targetedADdomainFQDN,
 	[ValidateSet("allRWDCs", "allRODCs", "specificRODCs")]
-	[string]$targetKrbTgtAccountScope,
+	[string]$targetKrbtgtAccountScope,
 	[string[]]$targetRODCFQDNList,
 	[switch]$continueOps,
 	[switch]$sendMailWithLogFile
@@ -32,7 +32,7 @@ $version = "v3.4, 2023-03-04"
 			--> Please Add Screendumps.
 
 	ORIGINAL SOURCES
-		- https://github.com/zjorz/Public-AD-Scripts/blob/master/Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1
+		- https://github.com/zjorz/Public-AD-Scripts/blob/master/Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1
 		- https://jorgequestforknowledge.wordpress.com/category/active-directory-domain-services-adds/krbtgt-account/
 
 	DISCLAIMER
@@ -68,7 +68,7 @@ $version = "v3.4, 2023-03-04"
 			of the PAC that is inside the service ticket that was presented by the client to the server. This problem would potentially persist
 			for the lifetime of the service ticket(s). It is also highly recommended NOT to use products that have reached their end support.
 			Please upgrade as soon as possible.
-		- This is not related to this script. When increasing the DFL from Windows Server 2003 to any higher level, the password of the KrbTgt
+		- This is not related to this script. When increasing the DFL from Windows Server 2003 to any higher level, the password of the Krbtgt
 			Account will be reset automatically due to the introduction of AES encryption for Kerberos and the requirement to regenerate new keys
 			for DES, RC4, AES128, AES256!
 
@@ -81,7 +81,7 @@ $version = "v3.4, 2023-03-04"
 			- Bug Fix: updated the attribute type when specifying the number of the AD domain instead of the actual FQDN of the AD domain
 
 		v3.2, 2022-11-05, Jorge de Almeida Pinto [MVP-EMS]:
-			- New Feature: Adding support for scheduled/automated password reset of KrbTgt account password for either all RWDCs, all individual RODCs or specific RODCs
+			- New Feature: Adding support for scheduled/automated password reset of Krbtgt account password for either all RWDCs, all individual RODCs or specific RODCs
 			- New Feature: Added mail function and parameter to mail the log file for review after execution with results
 			- New Feature: Adding support for signed mail
 			- New Feature: Adding support for encrypted mail
@@ -102,9 +102,9 @@ $version = "v3.4, 2023-03-04"
 			- Improved User Experience: The S.DS.P PowerShell Module v2.1.4 has been included into this script (with permission and under GPL license) to remove the dependency of the AD PowerShell Module when querying objects in AD. The
 				ActiveDirectory PowerShell module is still used to get forest, domain, and domaincontroller information.
 			- Improved User Experience: Removed dependency for port 135 (RPC Endpoint Mapper) and 9389 (AD Web Service)
-			- Bug Fix: Getting the description of the Test KrbTgt accounts in remote AD forest with explicit credentials to compare and fix later
-			- Code Improvement: In addition to check for the correct description, also check if the test KrbTgt accounts are member of the correct groups
-			- Code Improvement: Updated function createTestKrbTgtADAccount
+			- Bug Fix: Getting the description of the Test Krbtgt accounts in remote AD forest with explicit credentials to compare and fix later
+			- Code Improvement: In addition to check for the correct description, also check if the test Krbtgt accounts are member of the correct groups
+			- Code Improvement: Updated function createTestKrbtgtADAccount
 			- Bug Fix: Minor textual fixes
 
 		v3.0, 2022-05-27, Jorge de Almeida Pinto [MVP-EMS]:
@@ -144,10 +144,10 @@ $version = "v3.4, 2023-03-04"
 			- Improved User Experience: Operational modes have been changed (WARNING: pay attention to what you choose!). The following modes are the new modes
 				- 1 - Informational Mode (No Changes At All)
 				- 2 - Simulation Mode | Temporary Canary Object Created To Test Replication Convergence!
-				- 3 - Simulation Mode | Use KrbTgt TEST/BOGUS Accounts - No Password Reset/WhatIf Mode!
-				- 4 - Real Reset Mode | Use KrbTgt TEST/BOGUS Accounts - Password Will Be Reset Once!
-				- 5 - Simulation Mode | Use KrbTgt PROD/REAL Accounts - No Password Reset/WhatIf Mode!
-				- 6 - Real Reset Mode | Use KrbTgt PROD/REAL Accounts - Password Will Be Reset Once!
+				- 3 - Simulation Mode | Use Krbtgt TEST/BOGUS Accounts - No Password Reset/WhatIf Mode!
+				- 4 - Real Reset Mode | Use Krbtgt TEST/BOGUS Accounts - Password Will Be Reset Once!
+				- 5 - Simulation Mode | Use Krbtgt PROD/REAL Accounts - No Password Reset/WhatIf Mode!
+				- 6 - Real Reset Mode | Use Krbtgt PROD/REAL Accounts - Password Will Be Reset Once!
 			- Improved User Experience: When choosing RODC Krb Tgt Account scope the following will now occur:
 				- If the RODC is not reachable, the real source RWDC of the RODC cannot be determined. In that case, the RWDC with the PDC FSMO role is used as the source for the change and replication
 				- If the RODC is reachable, but the real source RWDC of the RODC is not reachable it cannot be used as the source for the change and replication. In that case, the RWDC with the PDC FSMO role is used as the source for the change and replication
@@ -157,7 +157,7 @@ $version = "v3.4, 2023-03-04"
 			- Code Improvement: In addition to the port 135 (RPC Endpoint Mapper) and 389 (LDAP), the script will also check for port 9389 (AD Web Service) which is used by the ADDS PoSH CMDlets
 			- Code Improvement: Updated script to included more 'try/catch' and more (error) logging, incl. line where it fails, when things go wrong to make troubleshooting easier
 			- Improved User Experience: Logging where the script is being executed from
-			- Improved User Experience: Updated the function 'createTestKrbTgtADAccount' to also include the FQDN of the RODC for which the Test KrbTgt account is created for better recognition
+			- Improved User Experience: Updated the function 'createTestKrbtgtADAccount' to also include the FQDN of the RODC for which the Test Krbtgt account is created for better recognition
 
 		v2.5, 2020-02-17, Jorge de Almeida Pinto [MVP-EMS]:
 			- Code Improvement: To improve performance, for some actions the nearest RWDC is discovered instead of using the RWDC with the PDC FSMO Role
@@ -180,11 +180,11 @@ $version = "v3.4, 2023-03-04"
 
 		v2.1, 2019-02-11, Jorge de Almeida Pinto [MVP-EMS]:
 			- Code Improvement: Added a try catch when enumerating details about a specific AD domain that appears not to be available
-			- New Feature: Read and display metadata of the KrbTgt accounts before and after to assure it was only updated once!
+			- New Feature: Read and display metadata of the Krbtgt accounts before and after to assure it was only updated once!
 
 		v2.0, 2018-12-30, Jorge de Almeida Pinto [MVP-EMS]:
 			- Code Improvement: Full rewrite and major release
-			- New Feature: Added possibility to also reset KrbTgt account in use by RODCs
+			- New Feature: Added possibility to also reset Krbtgt account in use by RODCs
 			- New Feature: Added possibility to try this procedure using a temp canary object (contact object)
 			- New Feature: Added possibility to try this procedure using a TEST krbtgt accounts and perform password reset on those TEST krbtgt accounts
 			- New Feature: Added possibility to create TEST krbtgt accounts if required
@@ -194,7 +194,7 @@ $version = "v3.4, 2023-03-04"
 			- New Feature: Removed dependency for RPCPING.EXE
 			- New Feature: Extensive logging to both screen and file
 			- New Feature: Added more checks, such as permissions check, etc.
-			- Script Improvement: Renamed script to Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1
+			- Script Improvement: Renamed script to Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1
 
 		v1.7, Jared Poeppelman, Microsoft
 			- Code Improvement: Modified rpcping.exe call to use "-u 9 -a connect" parameters to accomodate tighter RPC security settings as specified in
@@ -217,38 +217,38 @@ $version = "v3.4, 2023-03-04"
 
 <#
 .SYNOPSIS
-	This PoSH Script Resets The KrbTgt Password For RWDCs And RODCs In A Controlled Manner
+	This PoSH Script Resets The Krbtgt Password For RWDCs And RODCs In A Controlled Manner
 
 .DESCRIPTION
     This PoSH script provides the following functions:
-	- Single Password Reset for the KrbTgt account in use by RWDCs in a specific AD domain, using either TEST or PROD KrbTgt accounts
-	- Single Password Reset for the KrbTgt account in use by an individual RODC in a specific AD domain, using either TEST or PROD KrbTgt accounts
+	- Single Password Reset for the Krbtgt account in use by RWDCs in a specific AD domain, using either TEST or PROD Krbtgt accounts
+	- Single Password Reset for the Krbtgt account in use by an individual RODC in a specific AD domain, using either TEST or PROD Krbtgt accounts
 		* A single RODC in a specific AD domain
 		* A specific list of RODCs in a specific AD domain
 		* All RODCs in a specific AD domain
-	- Resetting the password/keys of the KrbTgt Account can be done for multiple reasons such as for example:
+	- Resetting the password/keys of the Krbtgt Account can be done for multiple reasons such as for example:
 		* From a security perspective as mentioned in https://cloudblogs.microsoft.com/microsoftsecure/2015/02/11/krbtgt-account-password-reset-scripts-now-available-for-customers/
 		* From an AD recovery perspective as mentioned in https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/manage/ad-forest-recovery-resetting-the-krbtgt-password
 	- For all scenarios, an informational mode, which is mode 1 with no changes
 	- For all scenarios, a simulation mode, which is mode 2 where replication is tested through the replication of a temporary canary
 		object that is created and deleted afterwards. No Password Resets involved here as the temporary canary object is a contact object
-	- For all scenarios, a simulation mode, which is mode 3 where NO password reset of the chosen TEST KrbTgt account occurs. Basically this
+	- For all scenarios, a simulation mode, which is mode 3 where NO password reset of the chosen TEST Krbtgt account occurs. Basically this
 		just checks the status of the objects on scoped DCs. NOTHING is changed. Can be scoped for RWDCs and RODCs (single, multiple, all)
-	- For all scenarios, a real reset mode, which is mode 4 where the password reset of the chosen TEST KrbTgt account is actually executed
+	- For all scenarios, a real reset mode, which is mode 4 where the password reset of the chosen TEST Krbtgt account is actually executed
 		and replication of it is monitored through the environment for its duration. Can be scoped for RWDCs and RODCs (single, multiple, all)
-	- For all scenarios, a simulation mode, which is mode 5 where NO password reset of the chosen PROD KrbTgt account occurs. Basically this
+	- For all scenarios, a simulation mode, which is mode 5 where NO password reset of the chosen PROD Krbtgt account occurs. Basically this
 		just checks the status of the objects on scoped DCs. NOTHING is changed. Can be scoped for RWDCs and RODCs (single, multiple, all)
-	- For all scenarios, a real reset mode, which is mode 6 where the password reset of the chosen PROD KrbTgt account is actually executed
+	- For all scenarios, a real reset mode, which is mode 6 where the password reset of the chosen PROD Krbtgt account is actually executed
 		and replication of it is monitored through the environment for its duration
-	- The creation of Test KrbTgt Accounts, which is mode 8
-	- The deletion of Test KrbTgt Accounts, which is mode 9
+	- The creation of Test Krbtgt Accounts, which is mode 8
+	- The deletion of Test Krbtgt Accounts, which is mode 9
 	- It is possible to run the script in a scheduled and automated manner by specifying the correct parameters and the correct information
 	- When running in a scheduled and automated manner, it is possible to have the log file mailed to some defined mailbox
 	- When mailing it is possible to sign and/or encrypt the mail message, provided the correct certificates are available for signing and/or
 		encryption
 	- Certificates can either be in the User Store or in a PFX file with the password available (Signing and Encryption) or in a CER file
 		(Encryption Only)
-	- When mailing of the log file is needed in ANY way, a configuration XML file "Reset-KrbTgt-Password-For-RWDCs-And-RODCs.xml" is needed
+	- When mailing of the log file is needed in ANY way, a configuration XML file "Reset-Krbtgt-Password-For-RWDCs-And-RODCs.xml" is needed
 		with settings to control mailing behavior. The configuration XML file is expected to be in the same folder as the script itself.
 		See below in the NOTES for the structure
 
@@ -276,11 +276,11 @@ $version = "v3.4, 2023-03-04"
 		* For RWDCs it uses the PROD/REAL krbtgt account "krbtgt" (All RWDCs)
 		* For RODCs it uses the PROD/REAL krbtgt account "krbtgt_<Numeric Value>" (RODC Specific)
 	- In mode 8, for RWDCs it creates (in disabled state!) the TEST/BOGUS krbtgt account "krbtgt_TEST" and adds it to the AD group
-		"Denied RODC Password Replication Group". If any RODC exists in the targeted AD domain, it reads the attribute "msDS-KrbTgtLink" of
+		"Denied RODC Password Replication Group". If any RODC exists in the targeted AD domain, it reads the attribute "msDS-KrbtgtLink" of
 		each RODC computer account to determine the RODC specific krbtgt account and creates (in disabled state!) the TEST/BOGUS krbtgt
 		account "krbtgt_<Numeric Value>_TEST" and adds it to the AD group "Allowed RODC Password Replication Group"
 	- In mode 9, for RWDCs it deletes the TEST/BOGUS krbtgt account "krbtgt_TEST" if it exists. If any RODC exists in the targeted AD domain,
-		it reads the attribute "msDS-KrbTgtLink" of each RODC computer account to determine the RODC specific krbtgt account and deletes the
+		it reads the attribute "msDS-KrbtgtLink" of each RODC computer account to determine the RODC specific krbtgt account and deletes the
 		TEST/BOGUS krbtgt account "krbtgt_<Numeric Value>_TEST" if it exists.
 	- In mode 2, 3, 4, 5 or 6, if a remote DC (RWDC/RODC) is not available or cannot be reached, there will not be a check against its AD database
 		to determine if the change made reached it or not.
@@ -312,8 +312,8 @@ $version = "v3.4, 2023-03-04"
 .PARAMETER modeOfOperation
 	With this parameter it is possible to specify the mode of operation for the script. This should only be used in an automated manner such as in
 	a Scheduled Task, BUT ONLY after testing an getting confidence of what will happen!
-	Accepted values are: "infoMode", "simulModeCanaryObject", "simulModeKrbTgtTestAccountsWhatIf", "resetModeKrbTgtTestAccountsResetOnce",
-						"simulModeKrbTgtProdAccountsWhatIf", "resetModeKrbTgtProdAccountsResetOnce"
+	Accepted values are: "infoMode", "simulModeCanaryObject", "simulModeKrbtgtTestAccountsWhatIf", "resetModeKrbtgtTestAccountsResetOnce",
+						"simulModeKrbtgtProdAccountsWhatIf", "resetModeKrbtgtProdAccountsResetOnce"
 
 .PARAMETER targetedADforestFQDN
 	With this parameter it is possible to specify the FQDN of an AD forest that will be targeted. This should only be used in an automated manner
@@ -323,14 +323,14 @@ $version = "v3.4, 2023-03-04"
 	With this parameter it is possible to specify the FQDN of an AD domain that will be targeted within the specified AD forest. This should only
 	be used in an automated manner such as in a Scheduled Task, BUT ONLY after testing an getting confidence of what will happen!
 
-.PARAMETER targetKrbTgtAccountScope
-	With this parameter it is possible to specify the scope of the targeted KrbTgt account. This should only be used in an automated manner such
+.PARAMETER targetKrbtgtAccountScope
+	With this parameter it is possible to specify the scope of the targeted Krbtgt account. This should only be used in an automated manner such
 	as in a Scheduled Task, BUT ONLY after testing an getting confidence of what will happen!
 	Accepted values are: "allRWDCs", "allRODCs", "specificRODCs"
 
 .PARAMETER targetRODCFQDNList
 	With this parameter it is possible to specify one or more RODCs through a comma-separated list. This parameter is ONLY needed when the
-	targetKrbTgtAccountScope is set to specificRODCs. This should only be used in an automated manner such as in a Scheduled Task, BUT ONLY after
+	targetKrbtgtAccountScope is set to specificRODCs. This should only be used in an automated manner such as in a Scheduled Task, BUT ONLY after
 	testing an getting confidence of what will happen!
 
 .PARAMETER continueOps
@@ -347,62 +347,62 @@ $version = "v3.4, 2023-03-04"
 .EXAMPLE
 	Execute The Script - On-Demand
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1
 
 .EXAMPLE
 	Execute The Script - Automated Without Sending The Log File Through Mail - Mode 2 With All RWDCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeCanaryObject -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRWDCs -continueOps
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeCanaryObject -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRWDCs -continueOps
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 2 With All RWDCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeCanaryObject -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeCanaryObject -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 3 With All RWDCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbTgtTestAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbtgtTestAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 4 With All RWDCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbTgtTestAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbtgtTestAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 5 With All RWDCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbTgtProdAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbtgtProdAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 6 With All RWDCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbTgtProdAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbtgtProdAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRWDCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 3 With All RODCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbTgtTestAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRODCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbtgtTestAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRODCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 4 With All RODCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbTgtTestAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRODCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbtgtTestAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRODCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 5 With All RODCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbTgtProdAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRODCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation simulModeKrbtgtProdAccountsWhatIf -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRODCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 6 With All RODCs As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbTgtProdAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope allRODCs -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbtgtProdAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope allRODCs -continueOps -sendMailWithLogFile
 
 .EXAMPLE
 	Execute The Script - Automated And Sending The Log File Through Mail - Mode 6 With Specific RODCs (But Not All) As Scope
 
-	.\Reset-KrbTgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbTgtProdAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbTgtAccountScope specificRODCs -targetRODCFQDNList "RODC1.DOMAIN.COM","RODC2.DOMAIN.COM","RODC3.DOMAIN.COM" -continueOps -sendMailWithLogFile
+	.\Reset-Krbtgt-Password-For-RWDCs-And-RODCs.ps1 -noInfo -modeOfOperation resetModeKrbtgtProdAccountsResetOnce -targetedADforestFQDN DOMAIN.COM -targetedADdomainFQDN CHILD.DOMAIN.COM -targetKrbtgtAccountScope specificRODCs -targetRODCFQDNList "RODC1.DOMAIN.COM","RODC2.DOMAIN.COM","RODC3.DOMAIN.COM" -continueOps -sendMailWithLogFile
 
 .NOTES
 	- Required PoSH CMDlets: GPMC PoSH CMDlets on all targeted RWDCs!!! (and the S.DS.P Posh CMDlets are INCLUDED in this script!)
@@ -414,7 +414,7 @@ $version = "v3.4, 2023-03-04"
 		every AD domain in the AD forest
 	- If the account used is from another AD domain in another AD forest, then the account running the script MUST be a member of the
 		"Administrators" group in the targeted AD domain. This also applies to any other target AD domain in that same AD forest
-	- This is due to the reset of the password for the targeted KrbTgt account(s) and forcing (single object) replication between DCs
+	- This is due to the reset of the password for the targeted Krbtgt account(s) and forcing (single object) replication between DCs
 	- Testing "Domain Admins" membership is done through "IsInRole" method as the group is domain specific
 	- Testing "Enterprise Admins" membership is done through "IsInRole" method as the group is forest specific
 	- Testing "Administrators" membership cannot be done through "IsInRole" method as the group exist in every AD domain with the same
@@ -437,10 +437,10 @@ $version = "v3.4, 2023-03-04"
 		In turn, every recipient must have the corresponding certificate with a private key (in the User Store) to be able to decrypt the mail
 	- When there is a need to SIGN and ENCRYPT the mail message, both of the previous requirements must be met
 	- To SIGN and/or ENCRYPT the mail message, the correct certificate must be issued and used, such as one with EKU "Secure Email (1.3.6.1.5.5.7.3.4)"
-	- Configuration XML file "Reset-KrbTgt-Password-For-RWDCs-And-RODCs.xml" structure
+	- Configuration XML file "Reset-Krbtgt-Password-For-RWDCs-And-RODCs.xml" structure
 ============ Configuration XML file ============
 <?xml version="1.0" encoding="utf-8"?>
-<resetKrbTgtPassword xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<resetKrbtgtPassword xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 	<!-- FQDN Of The Mail Server Or Mail Relay -->
 	<smtpServer>REPLACE_WITH_MAIL_SERVER_FQDN</smtpServer>
 
@@ -455,7 +455,7 @@ $version = "v3.4, 2023-03-04"
 	<smtpCredsPassword>LEAVE_EMPTY_OR_LEAVE_AS_IS_OR_REPLACE_WITH_PASSWORD_IF_USED</smtpCredsPassword>
 
 	<!-- Mail Subject To Use -->
-	<mailSubject>KrbTgt Password Reset Result</mailSubject>
+	<mailSubject>Krbtgt Password Reset Result</mailSubject>
 
 	<!-- The Priority Of The Message: Low, Normal, High -->
 	<mailPriority>High</mailPriority>
@@ -465,7 +465,7 @@ $version = "v3.4, 2023-03-04"
 &lt;!DOCTYPE html&gt;
 &lt;html&gt;
 &lt;head&gt;
-&lt;title&gt;KrbTgt_Password_Reset&lt;/title&gt;
+&lt;title&gt;Krbtgt_Password_Reset&lt;/title&gt;
 &lt;style type="text/css"&gt;
 &lt;/style&gt;
 &lt;/head&gt;
@@ -516,7 +516,7 @@ $version = "v3.4, 2023-03-04"
 
 	<!-- The password for the .pfx certificate file - Only Used When Corresponding Value For Location Is PFX -->
 	<mailSignAndEncryptCertPFXPassword>LEAVE_EMPTY_OR_LEAVE_AS_IS_OR_REPLACE_WITH_PFX_PASSWORD_IF_USED</mailSignAndEncryptCertPFXPassword>	<!-- Password Of PFX File Of Cert/Private Key To Sign/Encrypt The Mail By Sender -->
-</resetKrbTgtPassword>
+</resetKrbtgtPassword>
 ============ Configuration XML file ============
 #>
 
@@ -3487,33 +3487,33 @@ Function setPasswordOfADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountName
 	$objectMetadataBeforeAttribPwdLastSetVersion = $objectMetadataBeforeAttribPwdLastSet.Version
 
 	Logging "  --> RWDC To Reset Password On.............: '$targetedADdomainRWDCFQDN'"
-	Logging "  --> sAMAccountName Of KrbTgt Account......: '$krbTgtSamAccountName'"
-	Logging "  --> Distinguished Name Of KrbTgt Account..: '$krbTgtObjectBeforeDN'"
+	Logging "  --> sAMAccountName Of Krbtgt Account......: '$krbTgtSamAccountName'"
+	Logging "  --> Distinguished Name Of Krbtgt Account..: '$krbTgtObjectBeforeDN'"
 
 	# Specify The Number Of Characters The Generate Password Should Contain
 	$passwdNrChars = 64
 	Logging "  --> Number Of Chars For Pwd Generation....: '$passwdNrChars'"
 
 	# Generate A New Password With The Specified Length (Text)
-	$newKrbTgtPassword = $null
-	$newKrbTgtPassword = (generateNewComplexPassword $passwdNrChars).ToString()
+	$newKrbtgtPassword = $null
+	$newKrbtgtPassword = (generateNewComplexPassword $passwdNrChars).ToString()
 
 	# Convert The Text Based Version Of The New Password To A Secure String
-	#$newKrbTgtPasswordSecure = $null
-	#$newKrbTgtPasswordSecure = ConvertTo-SecureString $newKrbTgtPassword -AsPlainText -Force
+	#$newKrbtgtPasswordSecure = $null
+	#$newKrbtgtPasswordSecure = ConvertTo-SecureString $newKrbtgtPassword -AsPlainText -Force
 
-	# Try To Set The New Password On The Targeted KrbTgt Account And If Not Successfull Throw Error
+	# Try To Set The New Password On The Targeted Krbtgt Account And If Not Successfull Throw Error
 	Try {
 		$krbTgtObj = [PSCustomObject]@{distinguishedName = $null; unicodePwd = $null}
 		$krbTgtObj.distinguishedName = $krbTgtObjectBeforeDN
-		$krbTgtObj.unicodePwd = $newKrbTgtPassword
+		$krbTgtObj.unicodePwd = $newKrbtgtPassword
 		#Register-LdapAttributeTransform -name unicodePwd -AttributeName unicodePwd
 		If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
-			#Set-ADAccountPassword -Identity $krbTgtObjectBeforeDN -Server $targetedADdomainRWDCFQDN -Reset -NewPassword $newKrbTgtPasswordSecure
+			#Set-ADAccountPassword -Identity $krbTgtObjectBeforeDN -Server $targetedADdomainRWDCFQDN -Reset -NewPassword $newKrbtgtPasswordSecure
 			Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Mode Replace -Object $krbTgtObj -BinaryProps unicodePwd
 		}
 		If ($localADforest -eq $false -And $adminCrds) {
-			#Set-ADAccountPassword -Identity $krbTgtObjectBeforeDN -Server $targetedADdomainRWDCFQDN -Reset -NewPassword $newKrbTgtPasswordSecure -Credential $adminCrds
+			#Set-ADAccountPassword -Identity $krbTgtObjectBeforeDN -Server $targetedADdomainRWDCFQDN -Reset -NewPassword $newKrbtgtPasswordSecure -Credential $adminCrds
 			Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Mode Replace -Object $krbTgtObj -BinaryProps unicodePwd
 		}
 	} Catch {
@@ -3827,10 +3827,10 @@ Function checkADReplicationConvergence($targetedADdomainFQDN, $targetedADdomainS
 			$dcToCheckSourceRWDCNTDSSettingsObjectDN = $null
 			$dcToCheckSourceRWDCNTDSSettingsObjectDN = $dcToCheck."Source RWDC DSA"
 
-			# If Mode 3, Simulate Password Reset Of KrbTgt TEST/BOGUS Accounts (No Password Reset/WhatIf Mode)
-			# If Mode 4, Do A Real Password Reset Of KrbTgt TEST/BOGUS Accounts (Password Reset!)
-			# If Mode 5, Simulate Password Reset Of KrbTgt PROD/REAL Accounts (No Password Reset/WhatIf Mode)
-			# If Mode 6, Do A Real Password Reset Of KrbTgt PROD/REAL Accounts (Password Reset!)
+			# If Mode 3, Simulate Password Reset Of Krbtgt TEST/BOGUS Accounts (No Password Reset/WhatIf Mode)
+			# If Mode 4, Do A Real Password Reset Of Krbtgt TEST/BOGUS Accounts (Password Reset!)
+			# If Mode 5, Simulate Password Reset Of Krbtgt PROD/REAL Accounts (No Password Reset/WhatIf Mode)
+			# If Mode 6, Do A Real Password Reset Of Krbtgt PROD/REAL Accounts (Password Reset!)
 			If ($modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 4 -Or $modeOfOperationNr -eq 5 -Or $modeOfOperationNr -eq 6) {
 				# Retrieve The Object From The Source Originating RWDC
 				$objectOnSourceOrgRWDC = $null
@@ -3963,7 +3963,7 @@ Function checkADReplicationConvergence($targetedADdomainFQDN, $targetedADdomainS
 					}
 				}
 
-				# For Mode 3 Or 4 From The DC to Check Retrieve The AD Object Of The Targeted KrbTgt Account (And Its Password Last Set) That Had Its Password Reset On The Source (Originating) RWDC
+				# For Mode 3 Or 4 From The DC to Check Retrieve The AD Object Of The Targeted Krbtgt Account (And Its Password Last Set) That Had Its Password Reset On The Source (Originating) RWDC
 				If ($modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 4 -Or $modeOfOperationNr -eq 5 -Or $modeOfOperationNr -eq 6) {
 					# Retrieve The Object From The Target DC
 					$objectOnTargetDC = $null
@@ -4154,7 +4154,7 @@ Function checkADReplicationConvergence($targetedADdomainFQDN, $targetedADdomainS
 }
 
 ### FUNCTION: Create Test Krbtgt Accounts
-Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQDN, $krbTgtSamAccountName, $krbTgtUse, $targetedADdomainDomainSID, $localADforest, $adminCrds) {
+Function createTestKrbtgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQDN, $krbTgtSamAccountName, $krbTgtUse, $targetedADdomainDomainSID, $localADforest, $adminCrds) {
 	# Determine The DN Of The Default NC Of The Targeted Domain
 	$targetedADdomainDefaultNC = $null
 	If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
@@ -4191,39 +4191,39 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 	}
 
 	# Determine The DN Of The Users Container Of The Targeted Domain
-	$containerForTestKrbTgtAccount = $null
-	$containerForTestKrbTgtAccount = "CN=Users," + $targetedADdomainDefaultNC
+	$containerForTestKrbtgtAccount = $null
+	$containerForTestKrbtgtAccount = "CN=Users," + $targetedADdomainDefaultNC
 
-	# Set The SamAccountName For The Test/Bogus KrbTgt Account
-	$testKrbTgtObjectSamAccountName = $null
-	$testKrbTgtObjectSamAccountName = $krbTgtSamAccountName
+	# Set The SamAccountName For The Test/Bogus Krbtgt Account
+	$testKrbtgtObjectSamAccountName = $null
+	$testKrbtgtObjectSamAccountName = $krbTgtSamAccountName
 
-	# Set The Name For The Test/Bogus KrbTgt Account
-	$testKrbTgtObjectName = $null
-	$testKrbTgtObjectName = $testKrbTgtObjectSamAccountName
+	# Set The Name For The Test/Bogus Krbtgt Account
+	$testKrbtgtObjectName = $null
+	$testKrbtgtObjectName = $testKrbtgtObjectSamAccountName
 
-	# Set The Description For The Test/Bogus KrbTgt Account
-	$testKrbTgtObjectDescription = $null
+	# Set The Description For The Test/Bogus Krbtgt Account
+	$testKrbtgtObjectDescription = $null
 
-	# Set The Description For The Test/Bogus KrbTgt Account For RWDCs
+	# Set The Description For The Test/Bogus Krbtgt Account For RWDCs
 	If ($krbTgtUse -eq "RWDC") {
-		$testKrbTgtObjectDescription = "Test Copy Representing '$($krbTgtSamAccountName.SubString(0,$krbTgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RWDCs"
+		$testKrbtgtObjectDescription = "Test Copy Representing '$($krbTgtSamAccountName.SubString(0,$krbTgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RWDCs"
 	}
 
-	# Set The Description For The Test/Bogus KrbTgt Account For RODCs
+	# Set The Description For The Test/Bogus Krbtgt Account For RODCs
 	If ($krbTgtUse -eq "RODC") {
-		$testKrbTgtObjectDescription = "Test Copy Representing '$($krbTgtSamAccountName.SubString(0,$krbTgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RODC '$krbTgtInUseByDCFQDN'"
+		$testKrbtgtObjectDescription = "Test Copy Representing '$($krbTgtSamAccountName.SubString(0,$krbTgtSamAccountName.IndexOf('_TEST')))' - Key Distribution Center Service Account For RODC '$krbTgtInUseByDCFQDN'"
 	}
 
-	# Generate The DN Of The Test KrbTgt Object
-	$testKrbTgtObjectDN = $null
-	$testKrbTgtObjectDN = "CN=" + $testKrbTgtObjectName + "," + $containerForTestKrbTgtAccount
+	# Generate The DN Of The Test Krbtgt Object
+	$testKrbtgtObjectDN = $null
+	$testKrbtgtObjectDN = "CN=" + $testKrbtgtObjectName + "," + $containerForTestKrbtgtAccount
 
-	# Display Information About The Test KrbTgt To Be Created/Edited
+	# Display Information About The Test Krbtgt To Be Created/Edited
 	Logging "  --> RWDC To Create/Update Object On.......: '$targetedADdomainRWDCFQDN'"
-	Logging "  --> Full Name Test KrbTgt Account.........: '$testKrbTgtObjectName'"
-	Logging "  --> Description...........................: '$testKrbTgtObjectDescription'"
-	Logging "  --> Container Test KrbTgt Account.........: '$containerForTestKrbTgtAccount'"
+	Logging "  --> Full Name Test Krbtgt Account.........: '$testKrbtgtObjectName'"
+	Logging "  --> Description...........................: '$testKrbtgtObjectDescription'"
+	Logging "  --> Container Test Krbtgt Account.........: '$containerForTestKrbtgtAccount'"
 	If ($krbTgtUse -eq "RWDC") {
 		Logging "  --> To Be Used By DC(s)...................: 'All RWDCs'"
 	}
@@ -4231,7 +4231,7 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 		Logging "  --> To Be Used By RODC....................: '$krbTgtInUseByDCFQDN'"
 	}
 
-	# If The Test/Bogus KrbTgt Account Is Used By RWDCs
+	# If The Test/Bogus Krbtgt Account Is Used By RWDCs
 	If ($krbTgtUse -eq "RWDC") {
 		$deniedRODCPwdReplGroupRID = "572"
 		$deniedRODCPwdReplGroupObjectSID = $targetedADdomainDomainSID + "-" + $deniedRODCPwdReplGroupRID
@@ -4274,7 +4274,7 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 		Logging "  --> Membership Of RODC PRP Group..........: '$deniedRODCPwdReplGroupObjectName' ('$deniedRODCPwdReplGroupObjectDN')"
 	}
 
-	# If The Test/Bogus KrbTgt Account Is Used By RODCs
+	# If The Test/Bogus Krbtgt Account Is Used By RODCs
 	If ($krbTgtUse -eq "RODC") {
 		$allowedRODCPwdReplGroupRID = "571"
 		$allowedRODCPwdReplGroupObjectSID = $targetedADdomainDomainSID + "-" + $allowedRODCPwdReplGroupRID
@@ -4318,16 +4318,16 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 	}
 	Logging ""
 
-	# Check If The Test/Bogus KrbTgt Account Already Exists In AD
-	$testKrbTgtObject = $null
+	# Check If The Test/Bogus Krbtgt Account Already Exists In AD
+	$testKrbtgtObject = $null
 	If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 		Try {
-			#$testKrbTgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbTgtObjectDN)" -Properties Description -Server $targetedADdomainRWDCFQDN
+			#$testKrbtgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbtgtObjectDN)" -Properties Description -Server $targetedADdomainRWDCFQDN
 			$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-			$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)" -PropertiesToLoad @("description")
+			$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)" -PropertiesToLoad @("description")
 		} Catch {
 			Logging "" "ERROR"
-			Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN'..." "ERROR"
+			Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN'..." "ERROR"
 			Logging "" "ERROR"
 			Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 			Logging "" "ERROR"
@@ -4339,12 +4339,12 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 	}
 	If ($localADforest -eq $false -And $adminCrds) {
 		Try {
-			#$testKrbTgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbTgtObjectDN)" -Properties Description -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+			#$testKrbtgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbtgtObjectDN)" -Properties Description -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
 			$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-			$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)" -PropertiesToLoad @("description")
+			$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)" -PropertiesToLoad @("description")
 		} Catch {
 			Logging "" "ERROR"
-			Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN' Using '$($adminCrds.UserName)'..." "ERROR"
+			Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN' Using '$($adminCrds.UserName)'..." "ERROR"
 			Logging "" "ERROR"
 			Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 			Logging "" "ERROR"
@@ -4354,21 +4354,21 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			Logging "" "ERROR"
 		}
 	}
-	If ($testKrbTgtObject) {
-		Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ALREADY EXISTS on RWDC [$targetedADdomainRWDCFQDN]!..." "REMARK"
+	If ($testKrbtgtObject) {
+		Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ALREADY EXISTS on RWDC [$targetedADdomainRWDCFQDN]!..." "REMARK"
 		Logging ""
-		# Update The Description For The Test KrbTgt Account If There Is A Mismatch For Whatever Reason
-		If ($testKrbTgtObject.Description -ne $testKrbTgtObjectDescription) {
-			$testKrbTgtObj = [PSCustomObject]@{distinguishedName = $null; description = $null}
-			$testKrbTgtObj.distinguishedName = $testKrbTgtObjectDN
-			$testKrbTgtObj.description = $testKrbTgtObjectDescription
+		# Update The Description For The Test Krbtgt Account If There Is A Mismatch For Whatever Reason
+		If ($testKrbtgtObject.Description -ne $testKrbtgtObjectDescription) {
+			$testKrbtgtObj = [PSCustomObject]@{distinguishedName = $null; description = $null}
+			$testKrbtgtObj.distinguishedName = $testKrbtgtObjectDN
+			$testKrbtgtObj.description = $testKrbtgtObjectDescription
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
-					#Set-ADUser -Identity $testKrbTgtObjectSamAccountName -description $testKrbTgtObjectDescription -Server $targetedADdomainRWDCFQDN
-					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Mode Replace -Object $testKrbTgtObj
+					#Set-ADUser -Identity $testKrbtgtObjectSamAccountName -description $testKrbtgtObjectDescription -Server $targetedADdomainRWDCFQDN
+					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Mode Replace -Object $testKrbtgtObj
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Updating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName'..." "ERROR"
+					Logging "Error Updating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4380,11 +4380,11 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			}
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
-					#Set-ADUser -Identity $testKrbTgtObjectSamAccountName -description $testKrbTgtObjectDescription -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
-					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Mode Replace -Object $testKrbTgtObj
+					#Set-ADUser -Identity $testKrbtgtObjectSamAccountName -description $testKrbtgtObjectDescription -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Mode Replace -Object $testKrbtgtObj
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Updating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
+					Logging "Error Updating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4394,21 +4394,21 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 					Logging "" "ERROR"
 				}
 			}
-			Logging "  --> Updated Description For Existing Test KrbTgt Account [$testKrbTgtObjectDN] on RWDC [$targetedADdomainRWDCFQDN] Due To Mismatch!..." "REMARK"
+			Logging "  --> Updated Description For Existing Test Krbtgt Account [$testKrbtgtObjectDN] on RWDC [$targetedADdomainRWDCFQDN] Due To Mismatch!..." "REMARK"
 		}
 
-		# Check The Membership Of The Test KrbTgt Accounts And Update As Needed
+		# Check The Membership Of The Test Krbtgt Accounts And Update As Needed
 		$updateMembership = $false
 		If ($krbTgtUse -eq "RWDC") {
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
+					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
 						$updateMembership = $true
 					}
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName'..." "ERROR"
+					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4421,12 +4421,12 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
+					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$deniedRODCPwdReplGroupObjectDN))")) {
 						$updateMembership = $true
 					}
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName' Using '$($adminCrds.UserName)'..." "ERROR"
+					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$deniedRODCPwdReplGroupObjectName' Using '$($adminCrds.UserName)'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4441,12 +4441,12 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
+					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
 						$updateMembership = $true
 					}
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName'..." "ERROR"
+					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4459,12 +4459,12 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbTgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
+					If (!(Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$testKrbtgtObjectSamAccountName)(memberOf:1.2.840.113556.1.4.1941:=$allowedRODCPwdReplGroupObjectDN))")) {
 						$updateMembership = $true
 					}
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbTgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName' Using '$($adminCrds.UserName)'..." "ERROR"
+					Logging "Error Checking Membership On '$targetedADdomainRWDCFQDN' Of Object '$testKrbtgtObjectSamAccountName' For Object '$allowedRODCPwdReplGroupObjectName' Using '$($adminCrds.UserName)'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4476,7 +4476,7 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			}
 		}
 	} Else {
-		# If The Test/Bogus KrbTgt Account Does Not Exist Yet In AD
+		# If The Test/Bogus Krbtgt Account Does Not Exist Yet In AD
 		# Specify The Number Of Characters The Generate Password Should Contain
 		$passwdNrChars = 64
 
@@ -4488,24 +4488,24 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 		#$krbTgtPasswordSecure = $null
 		#$krbTgtPasswordSecure = ConvertTo-SecureString $krbTgtPassword -AsPlainText -Force
 
-		# Try To Create The Test/Bogus KrbTgt Account In The AD Domain And If Not Successfull Throw Error
+		# Try To Create The Test/Bogus Krbtgt Account In The AD Domain And If Not Successfull Throw Error
 		Try {
-			$testKrbTgtObj = [PSCustomObject]@{distinguishedName = $null; objectClass = $null; sAMAccountName = $null; displayName = $null; userAccountControl = 0; unicodePwd = $null; description = $null}
-			$testKrbTgtObj.distinguishedName = $testKrbTgtObjectDN
-			$testKrbTgtObj.objectClass = "user"
-			$testKrbTgtObj.sAMAccountName = $testKrbTgtObjectSamAccountName
-			$testKrbTgtObj.displayName = $testKrbTgtObjectName
-			$testKrbTgtObj.userAccountControl = 514
-			$testKrbTgtObj.unicodePwd = $krbTgtPassword
-			$testKrbTgtObj.description = $testKrbTgtObjectDescription
+			$testKrbtgtObj = [PSCustomObject]@{distinguishedName = $null; objectClass = $null; sAMAccountName = $null; displayName = $null; userAccountControl = 0; unicodePwd = $null; description = $null}
+			$testKrbtgtObj.distinguishedName = $testKrbtgtObjectDN
+			$testKrbtgtObj.objectClass = "user"
+			$testKrbtgtObj.sAMAccountName = $testKrbtgtObjectSamAccountName
+			$testKrbtgtObj.displayName = $testKrbtgtObjectName
+			$testKrbtgtObj.userAccountControl = 514
+			$testKrbtgtObj.unicodePwd = $krbTgtPassword
+			$testKrbtgtObj.description = $testKrbtgtObjectDescription
 			#Register-LdapAttributeTransform -name unicodePwd -AttributeName unicodePwd
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
-					#New-ADUser -SamAccountName $testKrbTgtObjectSamAccountName -Name $testKrbTgtObjectName -DisplayName $testKrbTgtObjectName -Path $containerForTestKrbTgtAccount -AccountPassword $krbTgtPasswordSecure -Enabled $False -description $testKrbTgtObjectDescription -Server $targetedADdomainRWDCFQDN
-					Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbTgtObj -BinaryProps unicodePwd
+					#New-ADUser -SamAccountName $testKrbtgtObjectSamAccountName -Name $testKrbtgtObjectName -DisplayName $testKrbtgtObjectName -Path $containerForTestKrbtgtAccount -AccountPassword $krbTgtPasswordSecure -Enabled $False -description $testKrbtgtObjectDescription -Server $targetedADdomainRWDCFQDN
+					Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbtgtObj -BinaryProps unicodePwd
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Creating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName'..." "ERROR"
+					Logging "Error Creating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4517,11 +4517,11 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			}
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
-					#New-ADUser -SamAccountName $testKrbTgtObjectSamAccountName -Name $testKrbTgtObjectName -DisplayName $testKrbTgtObjectName -Path $containerForTestKrbTgtAccount -AccountPassword $krbTgtPasswordSecure -Enabled $False -description $testKrbTgtObjectDescription -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
-					Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Object $testKrbTgtObj -BinaryProps unicodePwd
+					#New-ADUser -SamAccountName $testKrbtgtObjectSamAccountName -Name $testKrbtgtObjectName -DisplayName $testKrbtgtObjectName -Path $containerForTestKrbtgtAccount -AccountPassword $krbTgtPasswordSecure -Enabled $False -description $testKrbtgtObjectDescription -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+					Add-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Object $testKrbtgtObj -BinaryProps unicodePwd
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Creating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbTgtObjectSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
+					Logging "Error Creating User On '$targetedADdomainRWDCFQDN' For Object '$testKrbtgtObjectSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -4533,7 +4533,7 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			}
 		} Catch {
 			#Logging "" "ERROR"
-			Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] FAILED TO BE CREATED on RWDC [$targetedADdomainRWDCFQDN]!..." "ERROR"
+			Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] FAILED TO BE CREATED on RWDC [$targetedADdomainRWDCFQDN]!..." "ERROR"
 			Logging "" "ERROR"
 			#Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 			#Logging "" "ERROR"
@@ -4543,16 +4543,16 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			#Logging "" "ERROR"
 		}
 
-		# Check The The Test/Bogus KrbTgt Account Exists And Was created In AD
-		$testKrbTgtObject = $null
+		# Check The The Test/Bogus Krbtgt Account Exists And Was created In AD
+		$testKrbtgtObject = $null
 		If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 			Try {
-				#$testKrbTgtObject = Get-ADObject -LDAPFilter "(&(objectClass=user)(name=$testKrbTgtObjectName))" -Server $targetedADdomainRWDCFQDN
+				#$testKrbtgtObject = Get-ADObject -LDAPFilter "(&(objectClass=user)(name=$testKrbtgtObjectName))" -Server $targetedADdomainRWDCFQDN
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-				$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbTgtObjectName))"
+				$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbtgtObjectName))"
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'name=$testKrbTgtObjectName'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'name=$testKrbtgtObjectName'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -4564,12 +4564,12 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 		}
 		If ($localADforest -eq $false -And $adminCrds) {
 			Try {
-				#$testKrbTgtObject = Get-ADObject -LDAPFilter "(&(objectClass=user)(name=$testKrbTgtObjectName))" -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+				#$testKrbtgtObject = Get-ADObject -LDAPFilter "(&(objectClass=user)(name=$testKrbtgtObjectName))" -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-				$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbTgtObjectName))"
+				$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectClass=user)(name=$testKrbtgtObjectName))"
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'name=$testKrbTgtObjectName' Using '$($adminCrds.UserName)'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'name=$testKrbtgtObjectName' Using '$($adminCrds.UserName)'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -4579,10 +4579,10 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 				Logging "" "ERROR"
 			}
 		}
-		If ($testKrbTgtObject) {
-			$testKrbTgtObjectDN = $null
-			$testKrbTgtObjectDN = $testKrbTgtObject.DistinguishedName
-			Logging "  --> New Test KrbTgt Account [$testKrbTgtObjectDN] CREATED on RWDC [$targetedADdomainRWDCFQDN]!..." "REMARK"
+		If ($testKrbtgtObject) {
+			$testKrbtgtObjectDN = $null
+			$testKrbtgtObjectDN = $testKrbtgtObject.DistinguishedName
+			Logging "  --> New Test Krbtgt Account [$testKrbtgtObjectDN] CREATED on RWDC [$targetedADdomainRWDCFQDN]!..." "REMARK"
 			Logging "" "REMARK"
 			$updateMembership = $true
 		} Else {
@@ -4590,17 +4590,17 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 		}
 	}
 
-	If ($testKrbTgtObject -And $updateMembership -eq $true) {
-		# If The Test/Bogus KrbTgt Account Already Exists In AD
-		# If The Test/Bogus KrbTgt Account Is Not Yet A Member Of The Specified AD Group, Then Add It As A Member
+	If ($testKrbtgtObject -And $updateMembership -eq $true) {
+		# If The Test/Bogus Krbtgt Account Already Exists In AD
+		# If The Test/Bogus Krbtgt Account Is Not Yet A Member Of The Specified AD Group, Then Add It As A Member
 		If ($krbTgtUse -eq "RWDC") {
-			# If The Test/Bogus KrbTgt Account Is Used By RWDCs
+			# If The Test/Bogus Krbtgt Account Is Used By RWDCs
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
-					#Add-ADGroupMember -Identity $deniedRODCPwdReplGroupObjectName -Members $testKrbTgtObjectDN -Server $targetedADdomainRWDCFQDN
+					#Add-ADGroupMember -Identity $deniedRODCPwdReplGroupObjectName -Members $testKrbtgtObjectDN -Server $targetedADdomainRWDCFQDN
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
 					$deniedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$deniedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-					$deniedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+					$deniedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
 					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Object $deniedRODCPwdReplGroupObject -Mode Add
 				} Catch {
 					Logging "" "ERROR"
@@ -4616,10 +4616,10 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			}
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
-					#Add-ADGroupMember -Identity $deniedRODCPwdReplGroupObjectName -Members $testKrbTgtObjectDN -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+					#Add-ADGroupMember -Identity $deniedRODCPwdReplGroupObjectName -Members $testKrbtgtObjectDN -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
 					$deniedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$deniedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-					$deniedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+					$deniedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
 					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Object $deniedRODCPwdReplGroupObject -Mode Add
 				} Catch {
 					Logging "" "ERROR"
@@ -4633,18 +4633,18 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 					Logging "" "ERROR"
 				}
 			}
-			Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ADDED AS MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." "REMARK"
+			Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ADDED AS MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." "REMARK"
 			Logging "" "REMARK"
 		}
 
 		If ($krbTgtUse -eq "RODC") {
-			# If The Test/Bogus KrbTgt Account Is Used By RODCs
+			# If The Test/Bogus Krbtgt Account Is Used By RODCs
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
-					#Add-ADGroupMember -Identity $allowedRODCPwdReplGroupObjectName -Members $testKrbTgtObjectDN -Server $targetedADdomainRWDCFQDN
+					#Add-ADGroupMember -Identity $allowedRODCPwdReplGroupObjectName -Members $testKrbtgtObjectDN -Server $targetedADdomainRWDCFQDN
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
 					$allowedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$allowedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-					$allowedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+					$allowedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
 					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Object $allowedRODCPwdReplGroupObject -Mode Add
 				} Catch {
 					Logging "" "ERROR"
@@ -4660,10 +4660,10 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 			}
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
-					#Add-ADGroupMember -Identity $allowedRODCPwdReplGroupObjectName -Members $testKrbTgtObjectDN -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+					#Add-ADGroupMember -Identity $allowedRODCPwdReplGroupObjectName -Members $testKrbtgtObjectDN -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
 					$allowedRODCPwdReplGroupObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectClass=group)(sAMAccountName=$allowedRODCPwdReplGroupObjectName))" -AdditionalProperties @('member')
-					$allowedRODCPwdReplGroupObject.member = $testKrbTgtObjectDN
+					$allowedRODCPwdReplGroupObject.member = $testKrbtgtObjectDN
 					Edit-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Object $allowedRODCPwdReplGroupObject -Mode Add
 				} Catch {
 					Logging "" "ERROR"
@@ -4677,30 +4677,30 @@ Function createTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtInUseByDCFQ
 					Logging "" "ERROR"
 				}
 			}
-			Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ADDED AS MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." "REMARK"
+			Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ADDED AS MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." "REMARK"
 			Logging "" "REMARK"
 		}
-	} ElseIf ($testKrbTgtObject -And $updateMembership -eq $false) {
-		# If The Test/Bogus KrbTgt Account Is Already A Member Of The Specified AD Group
+	} ElseIf ($testKrbtgtObject -And $updateMembership -eq $false) {
+		# If The Test/Bogus Krbtgt Account Is Already A Member Of The Specified AD Group
 		If ($krbTgtUse -eq "RWDC") {
-			Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ALREADY MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." "REMARK"
+			Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ALREADY MEMBER OF [$deniedRODCPwdReplGroupObjectName]!..." "REMARK"
 		}
 		If ($krbTgtUse -eq "RODC") {
-			Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] ALREADY MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." "REMARK"
+			Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] ALREADY MEMBER OF [$allowedRODCPwdReplGroupObjectName]!..." "REMARK"
 		}
 		Logging "" "REMARK"
 	}
 }
 
 ### FUNCTION: Delete Test Krbtgt Accounts
-Function deleteTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountName) {
-	# Check If The Test/Bogus KrbTgt Account Exists In AD
-	$testKrbTgtObject = $null
+Function deleteTestKrbtgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountName) {
+	# Check If The Test/Bogus Krbtgt Account Exists In AD
+	$testKrbtgtObject = $null
 	If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 		Try {
-			#$testKrbTgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$krbTgtSamAccountName)" -Server $targetedADdomainRWDCFQDN
+			#$testKrbtgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$krbTgtSamAccountName)" -Server $targetedADdomainRWDCFQDN
 			$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-			$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$krbTgtSamAccountName))"
+			$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$krbTgtSamAccountName))"
 		} Catch {
 			Logging "" "ERROR"
 			Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'sAMAccountName=$krbTgtSamAccountName'..." "ERROR"
@@ -4716,9 +4716,9 @@ Function deleteTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountN
 	}
 	If ($localADforest -eq $false -And $adminCrds) {
 		Try {
-			#$testKrbTgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$krbTgtSamAccountName)" -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+			#$testKrbtgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$krbTgtSamAccountName)" -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
 			$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-			$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$krbTgtSamAccountName))"
+			$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$krbTgtSamAccountName))"
 		} Catch {
 			Logging "" "ERROR"
 			Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object 'sAMAccountName=$krbTgtSamAccountName'..." "ERROR"
@@ -4731,20 +4731,20 @@ Function deleteTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountN
 			Logging "" "ERROR"
 		}
 	}
-	If ($testKrbTgtObject) {
+	If ($testKrbtgtObject) {
 		# If It Does Exist In AD
-		$testKrbTgtObjectDN = $null
-		$testKrbTgtObjectDN = $testKrbTgtObject.DistinguishedName
+		$testKrbtgtObjectDN = $null
+		$testKrbtgtObjectDN = $testKrbtgtObject.DistinguishedName
 		Logging "  --> RWDC To Delete Object On..............: '$targetedADdomainRWDCFQDN'"
-		Logging "  --> Test KrbTgt Account DN................: '$testKrbTgtObjectDN'"
+		Logging "  --> Test Krbtgt Account DN................: '$testKrbtgtObjectDN'"
 		Logging ""
 		If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 			Try {
-				#Remove-ADUser -Identity $testKrbTgtObjectDN -Server $targetedADdomainRWDCFQDN -Confirm:$false
-				Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbTgtObjectDN
+				#Remove-ADUser -Identity $testKrbtgtObjectDN -Server $targetedADdomainRWDCFQDN -Confirm:$false
+				Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -Object $testKrbtgtObjectDN
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Deleting User On '$targetedADdomainRWDCFQDN' For Object '$testKrbTgtObjectDN'..." "ERROR"
+				Logging "Error Deleting User On '$targetedADdomainRWDCFQDN' For Object '$testKrbtgtObjectDN'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -4756,11 +4756,11 @@ Function deleteTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountN
 		}
 		If ($localADforest -eq $false -And $adminCrds) {
 			Try {
-				#Remove-ADUser -Identity $testKrbTgtObjectDN -Server $targetedADdomainRWDCFQDN -Credential $adminCrds -Confirm:$false
-				Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Object $testKrbTgtObjectDN
+				#Remove-ADUser -Identity $testKrbtgtObjectDN -Server $targetedADdomainRWDCFQDN -Credential $adminCrds -Confirm:$false
+				Remove-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -Object $testKrbtgtObjectDN
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Deleting User On '$targetedADdomainRWDCFQDN' For Object '$testKrbTgtObjectDN' Using '$($adminCrds.UserName)'..." "ERROR"
+				Logging "Error Deleting User On '$targetedADdomainRWDCFQDN' For Object '$testKrbtgtObjectDN' Using '$($adminCrds.UserName)'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -4770,15 +4770,15 @@ Function deleteTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountN
 				Logging "" "ERROR"
 			}
 		}
-		$testKrbTgtObject = $null
+		$testKrbtgtObject = $null
 		If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 			Try {
-				#$testKrbTgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbTgtObjectDN)" -Server $targetedADdomainRWDCFQDN
+				#$testKrbtgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbtgtObjectDN)" -Server $targetedADdomainRWDCFQDN
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-				$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)"
+				$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)"
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -4790,12 +4790,12 @@ Function deleteTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountN
 		}
 		If ($localADforest -eq $false -And $adminCrds) {
 			Try {
-				#$testKrbTgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbTgtObjectDN)" -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
+				#$testKrbtgtObject = Get-ADUser -LDAPFilter "(distinguishedName=$testKrbtgtObjectDN)" -Server $targetedADdomainRWDCFQDN -Credential $adminCrds
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-				$testKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbTgtObjectDN)"
+				$testKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$testKrbtgtObjectDN)"
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbTgtObjectDN' Using '$($adminCrds.UserName)'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainRWDCFQDN' For User Object With 'distinguishedName=$testKrbtgtObjectDN' Using '$($adminCrds.UserName)'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -4805,17 +4805,17 @@ Function deleteTestKrbTgtADAccount($targetedADdomainRWDCFQDN, $krbTgtSamAccountN
 				Logging "" "ERROR"
 			}
 		}
-		If (!$testKrbTgtObject) {
-			Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] DELETED on RWDC [$targetedADdomainRWDCFQDN]!..." "REMARK"
+		If (!$testKrbtgtObject) {
+			Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] DELETED on RWDC [$targetedADdomainRWDCFQDN]!..." "REMARK"
 			Logging "" "REMARK"
 		} Else {
-			Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] FAILED TO BE DELETED on RWDC [$targetedADdomainRWDCFQDN]!..." "ERROR"
-			Logging "  --> Manually delete the Test KrbTgt Account [$testKrbTgtObjectDN] on RWDC [$targetedADdomainRWDCFQDN]!..." "ERROR"
+			Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] FAILED TO BE DELETED on RWDC [$targetedADdomainRWDCFQDN]!..." "ERROR"
+			Logging "  --> Manually delete the Test Krbtgt Account [$testKrbtgtObjectDN] on RWDC [$targetedADdomainRWDCFQDN]!..." "ERROR"
 			Logging "" "ERROR"
 		}
 	} Else {
 		# If It Does Not Exist In AD
-		Logging "  --> Test KrbTgt Account [$testKrbTgtObjectDN] DOES NOT EXIST on RWDC [$targetedADdomainRWDCFQDN]!..." "WARNING"
+		Logging "  --> Test Krbtgt Account [$testKrbtgtObjectDN] DOES NOT EXIST on RWDC [$targetedADdomainRWDCFQDN]!..." "WARNING"
 		Logging "" "WARNING"
 	}
 }
@@ -5078,11 +5078,11 @@ $fqdnComputerInDNS = $getServerNames[3]			# [3] FQDN Of The Computer In The DNS 
 $fqdnDnsDomainOfComputer = $getServerNames[4]	# [4] FQDN Of The Dns Domain The Computer Is A Part Of
 $fqdnADDomainOfComputerContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext("Domain", $fqdnADDomainOfComputer)
 $fqdnADForestOfComputer = ([System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($fqdnADDomainOfComputerContext)).Forest.Name
-[string]$logFilePath = Join-Path $currentScriptFolderPath $($execDateTimeCustom + "_" + $localComputerName + "_Reset-KrbTgt-Password-For-RWDCs-And-RODCs.log")
+[string]$logFilePath = Join-Path $currentScriptFolderPath $($execDateTimeCustom + "_" + $localComputerName + "_Reset-Krbtgt-Password-For-RWDCs-And-RODCs.log")
 $connectionTimeout = 2000
 $argsCount = $PSBoundParameters.Count
 If ($argsCount -gt 0 -And $sendMailWithLogFile) {
-	[string]$scriptXMLConfigFilePath = Join-Path $currentScriptFolderPath "Reset-KrbTgt-Password-For-RWDCs-And-RODCs.xml"
+	[string]$scriptXMLConfigFilePath = Join-Path $currentScriptFolderPath "Reset-Krbtgt-Password-For-RWDCs-And-RODCs.xml"
 
 	### Read The XML Config File
 	If (!(Test-Path $scriptXMLConfigFilePath)) {
@@ -5093,41 +5093,41 @@ If ($argsCount -gt 0 -And $sendMailWithLogFile) {
 		
 		BREAK
 	} Else {
-		[XML]$script:configResetKrbTgtPasswordNotify = Get-Content $scriptXMLConfigFilePath
+		[XML]$script:configResetKrbtgtPasswordNotify = Get-Content $scriptXMLConfigFilePath
 
 		### Read The Properties From The XML Config File
-		$script:smtpServer = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.smtpServer
-		$script:smtpPort = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.smtpPort
-		$script:useSSLForSMTP = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.useSSLForSMTP
-		$script:sslType = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.sslType
-		$script:smtpCredsUserName = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.smtpCredsUserName
-		$script:smtpCredsPassword = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.smtpCredsPassword
-		$script:mailSubject = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailSubject
-		$script:mailPriority = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailPriority
-		$script:mailBody = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailBody
-		$script:mailFromSender = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailFromSender
-		$script:mailToRecipient = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailToRecipient
-		$script:mailCcRecipients = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailCcRecipients.mailCcRecipient
-		$script:mailSign = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailSign
-		$script:mailEncrypt = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailEncrypt
-		$script:mailSignAndEncryptDllFile = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailSignAndEncryptDllFile
+		$script:smtpServer = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.smtpServer
+		$script:smtpPort = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.smtpPort
+		$script:useSSLForSMTP = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.useSSLForSMTP
+		$script:sslType = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.sslType
+		$script:smtpCredsUserName = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.smtpCredsUserName
+		$script:smtpCredsPassword = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.smtpCredsPassword
+		$script:mailSubject = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailSubject
+		$script:mailPriority = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailPriority
+		$script:mailBody = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailBody
+		$script:mailFromSender = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailFromSender
+		$script:mailToRecipient = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailToRecipient
+		$script:mailCcRecipients = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailCcRecipients.mailCcRecipient
+		$script:mailSign = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailSign
+		$script:mailEncrypt = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailEncrypt
+		$script:mailSignAndEncryptDllFile = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailSignAndEncryptDllFile
 		If ($mailSign.ToUpper() -eq "ON") {
-			$script:mailSignAndEncryptCertLocation = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailSignAndEncryptCertLocation
+			$script:mailSignAndEncryptCertLocation = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailSignAndEncryptCertLocation
 			If ($mailSignAndEncryptCertLocation.ToUpper() -eq "PFX") {
-				$script:mailSignAndEncryptCertPFXFile = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailSignAndEncryptCertPFXFile
-				$script:mailSignAndEncryptCertPFXPassword = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailSignAndEncryptCertPFXPassword
+				$script:mailSignAndEncryptCertPFXFile = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailSignAndEncryptCertPFXFile
+				$script:mailSignAndEncryptCertPFXPassword = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailSignAndEncryptCertPFXPassword
 			}
 			If ($mailSignAndEncryptCertLocation.ToUpper() -eq "STORE") {
-				$script:mailSignAndEncryptCertThumbprint = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailSignAndEncryptCertThumbprint
+				$script:mailSignAndEncryptCertThumbprint = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailSignAndEncryptCertThumbprint
 			}
 		}
 		If ($mailEncrypt.ToUpper() -eq "ON") {
-			$script:mailEncryptCertLocation = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailEncryptCertLocation
+			$script:mailEncryptCertLocation = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailEncryptCertLocation
 			If ($mailEncryptCertLocation.ToUpper() -eq "CER") {
-				$script:mailEncryptCertCERFile = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailEncryptCertCERFile
+				$script:mailEncryptCertCERFile = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailEncryptCertCERFile
 			}
 			If ($mailEncryptCertLocation.ToUpper() -eq "STORE") {
-				$script:mailEncryptCertThumbprint = $configResetKrbTgtPasswordNotify.resetKrbTgtPassword.mailEncryptCertThumbprint
+				$script:mailEncryptCertThumbprint = $configResetKrbtgtPasswordNotify.resetKrbtgtPassword.mailEncryptCertThumbprint
 			}
 		}
 	}
@@ -5150,7 +5150,7 @@ Add-Type -AssemblyName System.DirectoryServices.Protocols -ErrorAction Stop
 Logging ""
 Logging "                                          **********************************************************" "MAINHEADER"
 Logging "                                          *                                                        *" "MAINHEADER"
-Logging "                                          *  --> Reset KrbTgt Account Password For RWDCs/RODCs <-- *" "MAINHEADER"
+Logging "                                          *  --> Reset Krbtgt Account Password For RWDCs/RODCs <-- *" "MAINHEADER"
 Logging "                                          *                                                        *" "MAINHEADER"
 Logging "                                          *     Re-Written By: Jorge de Almeida Pinto [MVP-EMS]    *" "MAINHEADER"
 Logging "                                          *                                                        *" "MAINHEADER"
@@ -5281,12 +5281,12 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging "-----" "REMARK"
 	Logging "This PoSH script provides the following functions:" "REMARK"
 	Logging "-----" "REMARK"
-	Logging " - Single Password Reset for the KrbTgt account in use by RWDCs in a specific AD domain, using either TEST or PROD KrbTgt accounts" "REMARK"
-	Logging " - Single Password Reset for the KrbTgt account in use by an individual RODC in a specific AD domain, using either TEST or PROD KrbTgt accounts" "REMARK"
+	Logging " - Single Password Reset for the Krbtgt account in use by RWDCs in a specific AD domain, using either TEST or PROD Krbtgt accounts" "REMARK"
+	Logging " - Single Password Reset for the Krbtgt account in use by an individual RODC in a specific AD domain, using either TEST or PROD Krbtgt accounts" "REMARK"
 	Logging "     * A single RODC in a specific AD domain" "REMARK"
 	Logging "     * A specific list of in a specific AD domain" "REMARK"
 	Logging "     * All RODCs in a specific AD domain" "REMARK"
-	Logging " - Resetting the password/keys of the KrbTgt Account can be done for multiple reasons such as for example:" "REMARK"
+	Logging " - Resetting the password/keys of the Krbtgt Account can be done for multiple reasons such as for example:" "REMARK"
 	Logging "     * From a security perspective as mentioned in:" "REMARK"
 	Logging "       https://cloudblogs.microsoft.com/microsoftsecure/2015/02/11/krbtgt-account-password-reset-scripts-now-available-for-customers/" "REMARK"
 	Logging "     * From an AD recovery perspective as mentioned in:" "REMARK"
@@ -5294,12 +5294,12 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging " - For all scenarios, an informational mode, which is mode 1 with no changes" "REMARK"
 	Logging " - For all scenarios, a simulation mode, which is mode 2 where replication is tested through the replication of a temporary canary" "REMARK"
 	Logging "     object that is created and deleted afterwards" "REMARK"
-	Logging " - For all scenarios, a simulation mode, which is mode 3 where the password reset of the chosen TEST KrbTgt account is actually executed" "REMARK"
+	Logging " - For all scenarios, a simulation mode, which is mode 3 where the password reset of the chosen TEST Krbtgt account is actually executed" "REMARK"
 	Logging "     and replication of it is monitored through the environment for its duration" "REMARK"
-	Logging " - For all scenarios, a real reset mode, which is mode 4 where the password reset of the chosen PROD KrbTgt account is actually executed" "REMARK"
+	Logging " - For all scenarios, a real reset mode, which is mode 4 where the password reset of the chosen PROD Krbtgt account is actually executed" "REMARK"
 	Logging "     and replication of it is monitored through the environment for its duration" "REMARK"
-	Logging " - The creation of Test KrbTgt Accounts" "REMARK"
-	Logging " - The cleanup of previously created Test KrbTgt Accounts" "REMARK"
+	Logging " - The creation of Test Krbtgt Accounts" "REMARK"
+	Logging " - The cleanup of previously created Test Krbtgt Accounts" "REMARK"
 	Logging ""
 	Logging ""
 	Logging "First, read the info above, then..." "ACTION"
@@ -5328,10 +5328,10 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging "     * Also executes everything from mode 1!" "REMARK-MORE-IMPORTANT"
 	Logging "     * Creates the temporary canary object and, depending on the scope, it will check if it exists in the AD database of the remote DC(s)" "REMARK-MORE-IMPORTANT"
 	Logging "       (RWDC/RODC)." "REMARK-MORE-IMPORTANT"
-	Logging "     * When simulating the KrbTgt account for RWDCs, the creation of the object is against the RWDC with the PDC Emulator FSMO followed" "REMARK-MORE-IMPORTANT"
+	Logging "     * When simulating the Krbtgt account for RWDCs, the creation of the object is against the RWDC with the PDC Emulator FSMO followed" "REMARK-MORE-IMPORTANT"
 	Logging "       by the 'replicate single object' operation against every available/reachable RWDC. This is a way to estimate the total replication" "REMARK-MORE-IMPORTANT"
 	Logging "       time for mode 4." "REMARK-MORE-IMPORTANT"
-	Logging "     * When simulating the KrbTgt account for RODCs, the creation of the object is against the RWDC the RODC is replicating from if" "REMARK-MORE-IMPORTANT"
+	Logging "     * When simulating the Krbtgt account for RODCs, the creation of the object is against the RWDC the RODC is replicating from if" "REMARK-MORE-IMPORTANT"
 	Logging "       available. If not available the creation is against the RWDC with the PDC Emulator FSMO. Either way it is followed by the 'replicate" "REMARK-MORE-IMPORTANT"
 	Logging "       single object' operation against the RODC. This is a way to estimate the total replication time for mode 4." "REMARK-MORE-IMPORTANT"
 	Logging "     * If a remote DC (RWDC/RODC) is not available or cannot be reached, there will not be a check against its AD database to determine if" "REMARK-MORE-IMPORTANT"
@@ -5348,10 +5348,10 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging ""
 	Logging " - Mode 3 is SIMULATION MODE USING TEST/BOGUS KRBTGT ACCOUNTS..." "REMARK-MORE-IMPORTANT"
 	Logging "     * Also executes everything from mode 1!" "REMARK-MORE-IMPORTANT"
-	Logging "     * Instead of using PROD/REAL KrbTgt Account(s), it uses pre-created TEST/BOGUS KrbTgt Accounts(s) for the password reset whatif!" "REMARK-MORE-IMPORTANT"
-	Logging "       * For RWDCs it uses the TEST/BOGUS KrbTgt account 'krbtgt_TEST' (All RWDCs) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
-	Logging "       * For RODCs it uses the TEST/BOGUS KrbTgt account 'krbtgt_<Numeric Value>_TEST' (RODC Specific) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
-	Logging "     * IT DOES NOT reset the password of the TEST/BOGUS KrbTgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MORE-IMPORTANT"
+	Logging "     * Instead of using PROD/REAL Krbtgt Account(s), it uses pre-created TEST/BOGUS Krbtgt Accounts(s) for the password reset whatif!" "REMARK-MORE-IMPORTANT"
+	Logging "       * For RWDCs it uses the TEST/BOGUS Krbtgt account 'krbtgt_TEST' (All RWDCs) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
+	Logging "       * For RODCs it uses the TEST/BOGUS Krbtgt account 'krbtgt_<Numeric Value>_TEST' (RODC Specific) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
+	Logging "     * IT DOES NOT reset the password of the TEST/BOGUS Krbtgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MORE-IMPORTANT"
 	Logging "       in the AD database of the remote DC(s) (RWDC/RODC) matches the Password Last Set value in the AD database of the source originating" "REMARK-MORE-IMPORTANT"
 	Logging "       RWDC." "REMARK-MORE-IMPORTANT"
 	Logging "     * If a remote DC (RWDC/RODC) is not available or cannot be reached, there will not be a check against its AD database to determine if" "REMARK-MORE-IMPORTANT"
@@ -5366,20 +5366,20 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging ""
 	Logging " - Mode 4 is REAL RESET MODE USING TEST/BOGUS KRBTGT ACCOUNTS..." "REMARK-MORE-IMPORTANT"
 	Logging "     * Also executes everything from mode 1!" "REMARK-MORE-IMPORTANT"
-	Logging "     * Instead of using PROD/REAL KrbTgt Account(s), it uses pre-created TEST/BOGUS KrbTgt Accounts(s) for the password reset!" "REMARK-MORE-IMPORTANT"
-	Logging "       * For RWDCs it uses the TEST/BOGUS KrbTgt account 'krbtgt_TEST' (All RWDCs) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
-	Logging "       * For RODCs it uses the TEST/BOGUS KrbTgt account 'krbtgt_<Numeric Value>_TEST' (RODC Specific) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
-	Logging "     * Resets the password of the TEST/BOGUS KrbTgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MORE-IMPORTANT"
+	Logging "     * Instead of using PROD/REAL Krbtgt Account(s), it uses pre-created TEST/BOGUS Krbtgt Accounts(s) for the password reset!" "REMARK-MORE-IMPORTANT"
+	Logging "       * For RWDCs it uses the TEST/BOGUS Krbtgt account 'krbtgt_TEST' (All RWDCs) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
+	Logging "       * For RODCs it uses the TEST/BOGUS Krbtgt account 'krbtgt_<Numeric Value>_TEST' (RODC Specific) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
+	Logging "     * Resets the password of the TEST/BOGUS Krbtgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MORE-IMPORTANT"
 	Logging "       in the AD database of the remote DC(s) (RWDC/RODC) matches the Password Last Set value in the AD database of the source originating" "REMARK-MORE-IMPORTANT"
 	Logging "       RWDC." "REMARK-MORE-IMPORTANT"
-	Logging "     * When simulating the KrbTgt account for RWDCs, the password reset is done for the TEST/BOGUS KrbTgt Accounts(s) against the RWDC with" "REMARK-MORE-IMPORTANT"
+	Logging "     * When simulating the Krbtgt account for RWDCs, the password reset is done for the TEST/BOGUS Krbtgt Accounts(s) against the RWDC with" "REMARK-MORE-IMPORTANT"
 	Logging "       the PDC Emulator FSMO followed by the 'replicate single object' operation against every available/reachable RWDC. No RODCs are involved" "REMARK-MORE-IMPORTANT"
-	Logging "       as those do not use the KrbTgt account in use by the RWDCs and also do not store/cache its password. This is a way to estimate the" "REMARK-MORE-IMPORTANT"
+	Logging "       as those do not use the Krbtgt account in use by the RWDCs and also do not store/cache its password. This is a way to estimate the" "REMARK-MORE-IMPORTANT"
 	Logging "       total replication time for mode 6." "REMARK-MORE-IMPORTANT"
-	Logging "     * When simulating the KrbTgt account for RODCs, the password reset is done for the TEST/BOGUS KrbTgt Accounts(s) against the RWDC the" "REMARK-MORE-IMPORTANT"
+	Logging "     * When simulating the Krbtgt account for RODCs, the password reset is done for the TEST/BOGUS Krbtgt Accounts(s) against the RWDC the" "REMARK-MORE-IMPORTANT"
 	Logging "       RODC is replicating from if available/reachable. If not available the password reset is against the RWDC with the PDC Emulator FSMO." "REMARK-MORE-IMPORTANT"
-	Logging "       Either way it is followed by the 'replicate single object' operation against the RODC that uses that KrbTgt account. Only the RODC" "REMARK-MORE-IMPORTANT"
-	Logging "       that uses the specific KrbTgt account is checked against to see if the change has reached it, but only if the RODC is available/reachable." "REMARK-MORE-IMPORTANT"
+	Logging "       Either way it is followed by the 'replicate single object' operation against the RODC that uses that Krbtgt account. Only the RODC" "REMARK-MORE-IMPORTANT"
+	Logging "       that uses the specific Krbtgt account is checked against to see if the change has reached it, but only if the RODC is available/reachable." "REMARK-MORE-IMPORTANT"
 	Logging "       This is a way to estimate the total replication time for mode 6." "REMARK-MORE-IMPORTANT"
 	Logging "     * If a remote DC (RWDC/RODC) is not available or cannot be reached, there will not be a check against its AD database to determine if" "REMARK-MORE-IMPORTANT"
 	Logging "       the change made reached it or not." "REMARK-MORE-IMPORTANT"
@@ -5395,10 +5395,10 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging ""
 	Logging " - Mode 5 is SIMULATION MODE USING PROD/REAL KRBTGT ACCOUNTS..." "REMARK-MORE-IMPORTANT"
 	Logging "     * Also executes everything from mode 1!" "REMARK-MORE-IMPORTANT"
-	Logging "     * Now it does use the PROD/REAL KrbTgt Accounts(s) for the password reset whatif!" "REMARK-MORE-IMPORTANT"
-	Logging "       * For RWDCs it uses the PROD/REAL KrbTgt account 'krbtgt' (All RWDCs) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
-	Logging "       * For RODCs it uses the PROD/REAL KrbTgt account 'krbtgt_<Numeric Value>' (RODC Specific) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
-	Logging "     * IT DOES NOT reset the password of the PROD/REAL KrbTgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MORE-IMPORTANT"
+	Logging "     * Now it does use the PROD/REAL Krbtgt Accounts(s) for the password reset whatif!" "REMARK-MORE-IMPORTANT"
+	Logging "       * For RWDCs it uses the PROD/REAL Krbtgt account 'krbtgt' (All RWDCs) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
+	Logging "       * For RODCs it uses the PROD/REAL Krbtgt account 'krbtgt_<Numeric Value>' (RODC Specific) (= Created when running mode 8)" "REMARK-MORE-IMPORTANT"
+	Logging "     * IT DOES NOT reset the password of the PROD/REAL Krbtgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MORE-IMPORTANT"
 	Logging "       in the AD database of the remote DC(s) (RWDC/RODC) matches the Password Last Set value in the AD database of the source originating" "REMARK-MORE-IMPORTANT"
 	Logging "       RWDC." "REMARK-MORE-IMPORTANT"
 	Logging "     * If a remote DC (RWDC/RODC) is not available or cannot be reached, there will not be a check against its AD database to determine if" "REMARK-MORE-IMPORTANT"
@@ -5413,20 +5413,20 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging ""
 	Logging " - Mode 6 is REAL RESET MODE USING PROD/REAL KRBTGT ACCOUNTS..." "REMARK-MOST-IMPORTANT"
 	Logging "     * Also executes everything from mode 1!" "REMARK-MOST-IMPORTANT"
-	Logging "     * Now it does use the PROD/REAL KrbTgt Accounts(s) for the password reset!" "REMARK-MOST-IMPORTANT"
-	Logging "       * For RWDCs it uses the PROD/REAL KrbTgt account 'krbtgt' (All RWDCs)" "REMARK-MOST-IMPORTANT"
-	Logging "       * For RODCs it uses the PROD/REAL KrbTgt account 'krbtgt_<Numeric Value>' (RODC Specific)" "REMARK-MOST-IMPORTANT"
-	Logging "     * Resets the password of the PROD/REAL KrbTgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MOST-IMPORTANT"
+	Logging "     * Now it does use the PROD/REAL Krbtgt Accounts(s) for the password reset!" "REMARK-MOST-IMPORTANT"
+	Logging "       * For RWDCs it uses the PROD/REAL Krbtgt account 'krbtgt' (All RWDCs)" "REMARK-MOST-IMPORTANT"
+	Logging "       * For RODCs it uses the PROD/REAL Krbtgt account 'krbtgt_<Numeric Value>' (RODC Specific)" "REMARK-MOST-IMPORTANT"
+	Logging "     * Resets the password of the PROD/REAL Krbtgt Accounts(s) and, depending on the scope, it will check if the Password Last Set value" "REMARK-MOST-IMPORTANT"
 	Logging "       in the AD database of the remote DC(s) (RWDC/RODC) matches the Password Last Set value in the AD database of the source originating" "REMARK-MOST-IMPORTANT"
 	Logging "       RWDC." "REMARK-MOST-IMPORTANT"
-	Logging "     * When simulating the KrbTgt account for RWDCs, the password reset is done for the PROD/REAL KrbTgt Accounts(s) against the RWDC with" "REMARK-MOST-IMPORTANT"
+	Logging "     * When simulating the Krbtgt account for RWDCs, the password reset is done for the PROD/REAL Krbtgt Accounts(s) against the RWDC with" "REMARK-MOST-IMPORTANT"
 	Logging "       the PDC Emulator FSMO followed by the 'replicate single object' operation against every available/reachable RWDC. No RODCs are involved" "REMARK-MOST-IMPORTANT"
-	Logging "       as those do not use the KrbTgt account in use by the RWDCs and also do not store/cache its password. Once the replication is" "REMARK-MOST-IMPORTANT"
+	Logging "       as those do not use the Krbtgt account in use by the RWDCs and also do not store/cache its password. Once the replication is" "REMARK-MOST-IMPORTANT"
 	Logging "       complete, the total impact time will be displayed." "REMARK-MOST-IMPORTANT"
-	Logging "     * When simulating the KrbTgt account for RODCs, the password reset is done for the PROD/REAL KrbTgt Accounts(s) against the RWDC the" "REMARK-MOST-IMPORTANT"
+	Logging "     * When simulating the Krbtgt account for RODCs, the password reset is done for the PROD/REAL Krbtgt Accounts(s) against the RWDC the" "REMARK-MOST-IMPORTANT"
 	Logging "       RODC is replicating from if available/reachable. If not available the password reset is against the RWDC with the PDC Emulator FSMO." "REMARK-MOST-IMPORTANT"
-	Logging "       Either way it is followed by the 'replicate single object' operation against the RODC that uses that KrbTgt account. Only the RODC" "REMARK-MOST-IMPORTANT"
-	Logging "       that uses the specific KrbTgt account is checked against to see if the change has reached it, but only if the RODC is available/reachable." "REMARK-MOST-IMPORTANT"
+	Logging "       Either way it is followed by the 'replicate single object' operation against the RODC that uses that Krbtgt account. Only the RODC" "REMARK-MOST-IMPORTANT"
+	Logging "       that uses the specific Krbtgt account is checked against to see if the change has reached it, but only if the RODC is available/reachable." "REMARK-MOST-IMPORTANT"
 	Logging "       Once the replication is complete, the total impact time will be displayed." "REMARK-MOST-IMPORTANT"
 	Logging "     * If a remote DC (RWDC/RODC) is not available or cannot be reached, there will not be a check against its AD database to determine if" "REMARK-MOST-IMPORTANT"
 	Logging "       the change made reached it or not." "REMARK-MOST-IMPORTANT"
@@ -5441,13 +5441,13 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging ""
 	Logging ""
 	Logging " - Mode 8 is CREATE TEST KRBTGT ACCOUNTS MODE..." "REMARK-IMPORTANT"
-	Logging "     * Creates so called TEST/BOGUS KrbTgt Account(s) to simulate the password reset with." "REMARK-IMPORTANT"
-	Logging "     * Has no impact on the PROD/REAL KrbTgt Account(s)." "REMARK-IMPORTANT"
-	Logging "     * For RWDCs it creates (in disabled state!) the TEST/BOGUS KrbTgt account 'krbtgt_TEST' and adds it to the AD group 'Denied RODC" "REMARK-IMPORTANT"
+	Logging "     * Creates so called TEST/BOGUS Krbtgt Account(s) to simulate the password reset with." "REMARK-IMPORTANT"
+	Logging "     * Has no impact on the PROD/REAL Krbtgt Account(s)." "REMARK-IMPORTANT"
+	Logging "     * For RWDCs it creates (in disabled state!) the TEST/BOGUS Krbtgt account 'krbtgt_TEST' and adds it to the AD group 'Denied RODC" "REMARK-IMPORTANT"
 	Logging "       Password Replication Group'." "REMARK-IMPORTANT"
-	Logging "     * For RODCs, if any in the AD domain, it creates (in disabled state!) the TEST/BOGUS KrbTgt account 'krbtgt_<Numeric Value>_TEST' and" "REMARK-IMPORTANT"
-	Logging "       adds it to the AD group 'Allowed RODC Password Replication Group'. To determine the specific KrbTgt account in use by an RODC, the" "REMARK-IMPORTANT"
-	Logging "       script reads the attribute 'msDS-KrbTgtLink' on the RODC computer account." "REMARK-IMPORTANT"
+	Logging "     * For RODCs, if any in the AD domain, it creates (in disabled state!) the TEST/BOGUS Krbtgt account 'krbtgt_<Numeric Value>_TEST' and" "REMARK-IMPORTANT"
+	Logging "       adds it to the AD group 'Allowed RODC Password Replication Group'. To determine the specific Krbtgt account in use by an RODC, the" "REMARK-IMPORTANT"
+	Logging "       script reads the attribute 'msDS-KrbtgtLink' on the RODC computer account." "REMARK-IMPORTANT"
 	Logging ""
 	Logging ""
 	Logging "First, read the info above, then..." "ACTION"
@@ -5457,10 +5457,10 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging ""
 	Logging ""
 	Logging " - Mode 9 is CLEANUP TEST KRBTGT ACCOUNTS MODE..." "REMARK-IMPORTANT"
-	Logging "     * Cleanup (delete) the so called TEST/BOGUS KrbTgt Account(s) that were used to simulate the password reset with." "REMARK-IMPORTANT"
-	Logging "     * For RWDCs it deletes the TEST/BOGUS KrbTgt account 'krbtgt_TEST' if it exists." "REMARK-IMPORTANT"
-	Logging "     * For RODCs, if any in the AD domain, it deletes the TEST/BOGUS KrbTgt account 'krbtgt_<Numeric Value>_TEST' if it exists. To determine" "REMARK-IMPORTANT"
-	Logging "       the specific KrbTgt account in use by an RODC, the script reads the attribute 'msDS-KrbTgtLink' on the RODC computer account." "REMARK-IMPORTANT"
+	Logging "     * Cleanup (delete) the so called TEST/BOGUS Krbtgt Account(s) that were used to simulate the password reset with." "REMARK-IMPORTANT"
+	Logging "     * For RWDCs it deletes the TEST/BOGUS Krbtgt account 'krbtgt_TEST' if it exists." "REMARK-IMPORTANT"
+	Logging "     * For RODCs, if any in the AD domain, it deletes the TEST/BOGUS Krbtgt account 'krbtgt_<Numeric Value>_TEST' if it exists. To determine" "REMARK-IMPORTANT"
+	Logging "       the specific Krbtgt account in use by an RODC, the script reads the attribute 'msDS-KrbtgtLink' on the RODC computer account." "REMARK-IMPORTANT"
 	Logging ""
 	Logging ""
 	Logging "First, read the info above, then..." "ACTION"
@@ -5489,23 +5489,23 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging " - ADDITIONAL INFO - OBSERVED IMPACT..." "REMARK-IMPORTANT"
 	Logging "     * Within an AD domain, all RWDCs use the account 'krbtgt' to encrypt/sign Kerberos tickets trusted by all RWDCs" "REMARK-IMPORTANT"
 	Logging "     * Within an AD domain, every RODC uses its own 'krbtgt_<Numeric Value>' account to encrypt/sign Kerberos tickets trusted by only that RODC" "REMARK-IMPORTANT"
-	Logging "       and that account is specified in the attribute 'msDS-KrbTgtLink' on the RODC computer account." "REMARK-IMPORTANT"
+	Logging "       and that account is specified in the attribute 'msDS-KrbtgtLink' on the RODC computer account." "REMARK-IMPORTANT"
 	Logging "     * RODCs are cryptographically isolated from other RODCs and the RWDCs, whether these are in the same AD site or not. Any Kerberos TGT/Service" "REMARK-IMPORTANT"
 	Logging "       tickets issued by an RODC are only valid against that RODC and any resource that has a secure channel with that RODC. That's why when an" "REMARK-IMPORTANT"
 	Logging "       RODC is compromised the scope of impact is only for that RODC and any resource using it, and not the complete AD domain." "REMARK-IMPORTANT"
-	Logging "     * Kerberos PAC validation failures: Until the new KrbTgt account password is replicated to all DCs in the domain using that KrbTgt account," "REMARK-IMPORTANT"
+	Logging "     * Kerberos PAC validation failures: Until the new Krbtgt account password is replicated to all DCs in the domain using that Krbtgt account," "REMARK-IMPORTANT"
 	Logging "       applications which attempt KDC PAC validation may experience KDC PAC validation failures. This is possible  when a client in one AD site" "REMARK-IMPORTANT"
 	Logging "       is accessing an application leveraging the Kerberos Authentication protocol that is in a different AD site. If that application is not a" "REMARK-IMPORTANT"
 	Logging "       trusted part of the operating system, it may attempt to validate the PAC of the client's Kerberos Service Ticket against the KDC (DC) in" "REMARK-IMPORTANT"
-	Logging "       its AD site. If the DC in its site does not yet have the new KrbTgt account password, this KDC PAC validation will fail. This will likely" "REMARK-IMPORTANT"
-	Logging "       manifest itself to the client as authentication errors for that application. Once all DCs using a specific KrbTgt account have the new" "REMARK-IMPORTANT"
+	Logging "       its AD site. If the DC in its site does not yet have the new Krbtgt account password, this KDC PAC validation will fail. This will likely" "REMARK-IMPORTANT"
+	Logging "       manifest itself to the client as authentication errors for that application. Once all DCs using a specific Krbtgt account have the new" "REMARK-IMPORTANT"
 	Logging "       password some affected clients may recover gracefully and resume functioning normally. If not, rebooting the affected client(s) will" "REMARK-IMPORTANT"
-	Logging "       resolve the issue. This issue may not occur if the replication of the new KrbTgt account password is timely and successful and no" "REMARK-IMPORTANT"
+	Logging "       resolve the issue. This issue may not occur if the replication of the new Krbtgt account password is timely and successful and no" "REMARK-IMPORTANT"
 	Logging "       applications attempt KDC PAC validation against an out of sync DC during that time." "REMARK-IMPORTANT"
-	Logging "     * Kerberos TGS request failures: Until the new KrbTgt account password is replicated to all DCs in the domain that use that KrbTgt account," "REMARK-IMPORTANT"
+	Logging "     * Kerberos TGS request failures: Until the new Krbtgt account password is replicated to all DCs in the domain that use that Krbtgt account," "REMARK-IMPORTANT"
 	Logging "       a client may experience Kerberos authentication failures. This is when a client in one AD site has obtained a Kerberos Ticket Granting" "REMARK-IMPORTANT"
-	Logging "       Ticket (TGT) from an RWDC that has the new KrbTgt account password, but then subsequently attempts to obtain a Kerberos Service Ticket" "REMARK-IMPORTANT"
-	Logging "       via a TGS request against an RWDC in a different AD site. If that RWDC does not also have the new KrbTgt account password, it will not" "REMARK-IMPORTANT"
+	Logging "       Ticket (TGT) from an RWDC that has the new Krbtgt account password, but then subsequently attempts to obtain a Kerberos Service Ticket" "REMARK-IMPORTANT"
+	Logging "       via a TGS request against an RWDC in a different AD site. If that RWDC does not also have the new Krbtgt account password, it will not" "REMARK-IMPORTANT"
 	Logging "       be able to decrypt the client''s TGT, which will result in a TGS request failure.  This will manifest itself to the client as authenticate" "REMARK-IMPORTANT"
 	Logging "       errors. However, it should be noted that this impact is very unlikely, because it is very unlikely that a client will attempt to obtain a" "REMARK-IMPORTANT"
 	Logging "       service ticket from a different RWDC than the one from which their TGT was obtained, especially during the relatively short impact" "REMARK-IMPORTANT"
@@ -5527,13 +5527,13 @@ If ($yesOrNo.ToUpper() -ne "NO" -And $yesOrNo.ToUpper() -ne "N") {
 	Logging ""
 	Logging "    !!! It is highly recommended to use the following order of execution: !!!" "REMARK-MORE-IMPORTANT"
 	Logging "     - Mode 1 - Informational Mode (No Changes At All)" "REMARK-MORE-IMPORTANT"
-	Logging "     - Mode 8 - Create TEST KrbTgt Accounts" "REMARK-MORE-IMPORTANT"
+	Logging "     - Mode 8 - Create TEST Krbtgt Accounts" "REMARK-MORE-IMPORTANT"
 	Logging "     - Mode 2 - Simulation Mode (Temporary Canary Object Created, No Password Reset!)" "REMARK-MORE-IMPORTANT"
-	Logging "     - Mode 3 - Simulation Mode - Use KrbTgt TEST/BOGUS Accounts (No Password Reset, Check Only!)" "REMARK-MORE-IMPORTANT"
-	Logging "     - Mode 4 - Real Reset Mode - Use KrbTgt TEST/BOGUS Accounts (Password Will Be Reset Once!)" "REMARK-MORE-IMPORTANT"
-	Logging "     - Mode 5 - Simulation Mode - Use KrbTgt PROD/REAL Accounts (No Password Reset, Check Only!)" "REMARK-MORE-IMPORTANT"
-	Logging "     - Mode 6 - Real Reset Mode - Use KrbTgt PROD/REAL Accounts (Password Will Be Reset Once!)" "REMARK-MORE-IMPORTANT"
-	Logging "     - Mode 9 - Cleanup TEST KrbTgt Accounts (Could be skipped to reuse accounts the next time!)" "REMARK-MORE-IMPORTANT"
+	Logging "     - Mode 3 - Simulation Mode - Use Krbtgt TEST/BOGUS Accounts (No Password Reset, Check Only!)" "REMARK-MORE-IMPORTANT"
+	Logging "     - Mode 4 - Real Reset Mode - Use Krbtgt TEST/BOGUS Accounts (Password Will Be Reset Once!)" "REMARK-MORE-IMPORTANT"
+	Logging "     - Mode 5 - Simulation Mode - Use Krbtgt PROD/REAL Accounts (No Password Reset, Check Only!)" "REMARK-MORE-IMPORTANT"
+	Logging "     - Mode 6 - Real Reset Mode - Use Krbtgt PROD/REAL Accounts (Password Will Be Reset Once!)" "REMARK-MORE-IMPORTANT"
+	Logging "     - Mode 9 - Cleanup TEST Krbtgt Accounts (Could be skipped to reuse accounts the next time!)" "REMARK-MORE-IMPORTANT"
 	Logging ""
 	Logging ""
 	Logging " - RECOMMENDATIONS:" "REMARK-MORE-IMPORTANT"
@@ -5577,17 +5577,17 @@ Logging " - 1 - Informational Mode (No Changes At All)"
 Logging ""
 Logging " - 2 - Simulation Mode | Temporary Canary Object Created To Test Replication Convergence!"
 Logging ""
-Logging " - 3 - Simulation Mode | Use KrbTgt TEST/BOGUS Accounts - No Password Reset/WhatIf Mode!"
+Logging " - 3 - Simulation Mode | Use Krbtgt TEST/BOGUS Accounts - No Password Reset/WhatIf Mode!"
 Logging ""
-Logging " - 4 - Real Reset Mode | Use KrbTgt TEST/BOGUS Accounts - Password Will Be Reset Once!"
+Logging " - 4 - Real Reset Mode | Use Krbtgt TEST/BOGUS Accounts - Password Will Be Reset Once!"
 Logging ""
-Logging " - 5 - Simulation Mode | Use KrbTgt PROD/REAL Accounts - No Password Reset/WhatIf Mode!"
+Logging " - 5 - Simulation Mode | Use Krbtgt PROD/REAL Accounts - No Password Reset/WhatIf Mode!"
 Logging ""
-Logging " - 6 - Real Reset Mode | Use KrbTgt PROD/REAL Accounts - Password Will Be Reset Once!"
+Logging " - 6 - Real Reset Mode | Use Krbtgt PROD/REAL Accounts - Password Will Be Reset Once!"
 Logging ""
 Logging ""
-Logging " - 8 - Create TEST KrbTgt Accounts"
-Logging " - 9 - Cleanup TEST KrbTgt Accounts"
+Logging " - 8 - Create TEST Krbtgt Accounts"
+Logging " - 9 - Cleanup TEST Krbtgt Accounts"
 Logging ""
 Logging ""
 Logging " - 0 - Exit Script"
@@ -5595,10 +5595,10 @@ Logging ""
 Switch ($modeOfOperation) {
 	"infoMode" {$modeOfOperationNr = 1}
 	"simulModeCanaryObject" {$modeOfOperationNr = 2}
-	"simulModeKrbTgtTestAccountsWhatIf" {$modeOfOperationNr = 3}
-	"resetModeKrbTgtTestAccountsResetOnce"	{ $modeOfOperationNr = 4}
-	"simulModeKrbTgtProdAccountsWhatIf" {$modeOfOperationNr = 5}
-	"resetModeKrbTgtProdAccountsResetOnce" {$modeOfOperationNr = 6}
+	"simulModeKrbtgtTestAccountsWhatIf" {$modeOfOperationNr = 3}
+	"resetModeKrbtgtTestAccountsResetOnce"	{ $modeOfOperationNr = 4}
+	"simulModeKrbtgtProdAccountsWhatIf" {$modeOfOperationNr = 5}
+	"resetModeKrbtgtProdAccountsResetOnce" {$modeOfOperationNr = 6}
 	Default {$modeOfOperationNr = $null}
 }
 If ($null -eq $modeOfOperationNr) {
@@ -5631,37 +5631,37 @@ If ($modeOfOperationNr -eq 2) {
 
 # If Mode 3
 If ($modeOfOperationNr -eq 3) {
-	Logging "  --> Chosen Mode: Mode 3 - Simulation Mode | Use KrbTgt TEST/BOGUS Accounts - No Password Reset/WhatIf Mode!..." "REMARK"
+	Logging "  --> Chosen Mode: Mode 3 - Simulation Mode | Use Krbtgt TEST/BOGUS Accounts - No Password Reset/WhatIf Mode!..." "REMARK"
 	Logging ""
 }
 
 # If Mode 4
 If ($modeOfOperationNr -eq 4) {
-	Logging "  --> Chosen Mode: Mode 4 - Real Reset Mode | Use KrbTgt TEST/BOGUS Accounts - Password Will Be Reset Once!..." "REMARK"
+	Logging "  --> Chosen Mode: Mode 4 - Real Reset Mode | Use Krbtgt TEST/BOGUS Accounts - Password Will Be Reset Once!..." "REMARK"
 	Logging ""
 }
 
 # If Mode 5
 If ($modeOfOperationNr -eq 5) {
-	Logging "  --> Chosen Mode: Mode 5 - Simulation Mode | Use KrbTgt PROD/REAL Accounts - No Password Reset/WhatIf Mode!..." "REMARK"
+	Logging "  --> Chosen Mode: Mode 5 - Simulation Mode | Use Krbtgt PROD/REAL Accounts - No Password Reset/WhatIf Mode!..." "REMARK"
 	Logging ""
 }
 
 # If Mode 6
 If ($modeOfOperationNr -eq 6) {
-	Logging "  --> Chosen Mode: Mode 6 - Real Reset Mode | Use KrbTgt PROD/REAL Accounts - Password Will Be Reset Once!..." "REMARK"
+	Logging "  --> Chosen Mode: Mode 6 - Real Reset Mode | Use Krbtgt PROD/REAL Accounts - Password Will Be Reset Once!..." "REMARK"
 	Logging ""
 }
 
 # If Mode 8
 If ($modeOfOperationNr -eq 8) {
-	Logging "  --> Chosen Mode: Mode 8 - Create TEST KrbTgt Accounts..." "REMARK"
+	Logging "  --> Chosen Mode: Mode 8 - Create TEST Krbtgt Accounts..." "REMARK"
 	Logging ""
 }
 
 # If Mode 9
 If ($modeOfOperationNr -eq 9) {
-	Logging "  --> Chosen Mode: Mode 9 - Cleanup TEST KrbTgt Accounts..." "REMARK"
+	Logging "  --> Chosen Mode: Mode 9 - Cleanup TEST Krbtgt Accounts..." "REMARK"
 	Logging ""
 }
 
@@ -6654,14 +6654,14 @@ If ($targetedADdomainDomainFunctionalModeLevel -ne "Unavailable" -And $targetedA
 	Logging "" "ERROR"
 	Logging "It CANNOT be determined the specified AD domain '$targetedADdomainFQDN' has a Domain Functional Mode of 'Windows2008Domain (3)' or higher!..." "ERROR"
 	Logging "" "ERROR"
-	Logging "AD domains with Windows Server 2000/2003 DCs CANNOT do KDC PAC validation using the previous (N-1) KrbTgt Account Password" "ERROR"
+	Logging "AD domains with Windows Server 2000/2003 DCs CANNOT do KDC PAC validation using the previous (N-1) Krbtgt Account Password" "ERROR"
 	Logging "like Windows Server 2008 and higher DCs are able to. Windows Server 2000/2003 DCs will only attempt it with the current (N)" "ERROR"
-	Logging "KrbTgt Account Password. That means that in the subset of KRB AP exchanges where KDC PAC validation is performed," "ERROR"
+	Logging "Krbtgt Account Password. That means that in the subset of KRB AP exchanges where KDC PAC validation is performed," "ERROR"
 	Logging "authentication issues could be experience because the target server gets a PAC validation error when asking the KDC (DC)" "ERROR"
 	Logging "to validate the KDC signature of the PAC that is inside the service ticket that was presented by the client to the server." "ERROR"
 	Logging "This problem would potentially persist for the lifetime of the service ticket(s). And by the way... for Windows Server" "ERROR"
 	Logging "2000/2003 support already ended years ago. Time to upgrade to higher version dude!" "ERROR"
-	Logging "Be aware though, when increasing the DFL from Windows Server 2003 to any higher level, the password of the KrbTgt Account" "ERROR"
+	Logging "Be aware though, when increasing the DFL from Windows Server 2003 to any higher level, the password of the Krbtgt Account" "ERROR"
 	Logging "will be reset automatically due to the introduction of AES encryption for Kerberos and the requirement to regenerate new" "ERROR"
 	Logging "keys for DES, RC4, AES128, AES256!" "ERROR"
 	Logging "" "ERROR"
@@ -6757,25 +6757,25 @@ If ($listOfRWDCsInADDomain) {
 		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "PDC" -Value $(If (($tableOfADDomainsInADForest | Where-Object{$_.Name -eq $targetedADdomainFQDN}).PDCFsmoOwner -eq $rwdcFQDN) {$true} Else {$false})
 		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Site Name" -Value $($rwdcObj.serverReferenceBL.Split(",")[2].Replace("CN=", ""))
 		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "DS Type" -Value "Read/Write"
-		$rwdcKrbTgtSamAccountName = $null
+		$rwdcKrbtgtSamAccountName = $null
 		If ($modeOfOperationNr -eq 1 -Or $modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 5 -Or $modeOfOperationNr -eq 6) {
-			# Use The PROD/REAL KrbTgt Account Of The RWDC
-			$rwdcKrbTgtSamAccountName = "krbtgt"
+			# Use The PROD/REAL Krbtgt Account Of The RWDC
+			$rwdcKrbtgtSamAccountName = "krbtgt"
 		}
 		If ($modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 4 -Or $modeOfOperationNr -eq 8 -Or $modeOfOperationNr -eq 9) {
-			# Use The TEST/BOGUS KrbTgt Account Of The RWDC
-			$rwdcKrbTgtSamAccountName = "krbtgt_TEST"
+			# Use The TEST/BOGUS Krbtgt Account Of The RWDC
+			$rwdcKrbtgtSamAccountName = "krbtgt_TEST"
 		}
-		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Krb Tgt" -Value $rwdcKrbTgtSamAccountName
-		$rwdcKrbTgtObject = $null
+		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Krb Tgt" -Value $rwdcKrbtgtSamAccountName
+		$rwdcKrbtgtObject = $null
 		If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 			Try {
-				#$rwdcKrbTgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rwdcKrbTgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN
+				#$rwdcKrbtgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rwdcKrbtgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-				$rwdcKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rwdcKrbTgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
+				$rwdcKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rwdcKrbtgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rwdcKrbTgtSamAccountName'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rwdcKrbtgtSamAccountName'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -6787,12 +6787,12 @@ If ($listOfRWDCsInADDomain) {
 		}
 		If ($localADforest -eq $false -And $adminCrds) {
 			Try {
-				#$rwdcKrbTgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rwdcKrbTgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds
+				#$rwdcKrbtgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rwdcKrbtgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-				$rwdcKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rwdcKrbTgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
+				$rwdcKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rwdcKrbtgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rwdcKrbTgtSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rwdcKrbtgtSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -6802,23 +6802,23 @@ If ($listOfRWDCsInADDomain) {
 				Logging "" "ERROR"
 			}
 		}
-		# Retrieve The Object Of The KrbTgt Account
-		If ($rwdcKrbTgtObject) {
-			# If The Object Of The KrbTgt Account Exists
+		# Retrieve The Object Of The Krbtgt Account
+		If ($rwdcKrbtgtObject) {
+			# If The Object Of The Krbtgt Account Exists
 			# Retrieve The DN OF The Object
-			$rwdcKrbTgtObjectDN = $null
-			$rwdcKrbTgtObjectDN = $rwdcKrbTgtObject.DistinguishedName
+			$rwdcKrbtgtObjectDN = $null
+			$rwdcKrbtgtObjectDN = $rwdcKrbtgtObject.DistinguishedName
 
-			# Retrieve The Password Last Set Value Of The KrbTgt Account
-			$rwdcKrbTgtPwdLastSet = $null
-			$rwdcKrbTgtPwdLastSet = Get-Date $([datetime]::fromfiletime($rwdcKrbTgtObject.pwdLastSet)) -f "yyyy-MM-dd HH:mm:ss"
+			# Retrieve The Password Last Set Value Of The Krbtgt Account
+			$rwdcKrbtgtPwdLastSet = $null
+			$rwdcKrbtgtPwdLastSet = Get-Date $([datetime]::fromfiletime($rwdcKrbtgtObject.pwdLastSet)) -f "yyyy-MM-dd HH:mm:ss"
 
 			# Set The Corresponding Value Of The RWDC In The Correct Column Of The Table
-			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Pwd Last Set" -Value $rwdcKrbTgtPwdLastSet
+			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Pwd Last Set" -Value $rwdcKrbtgtPwdLastSet
 
 			# Retrieve The Metadata Of The Object, And More Specific Of The pwdLastSet Attribute Of That Object
 			$objectMetadata = $null
-			$objectMetadata = retrieveObjectMetadata $targetedADdomainNearestRWDCFQDN $rwdcKrbTgtObjectDN $localADforest $adminCrds
+			$objectMetadata = retrieveObjectMetadata $targetedADdomainNearestRWDCFQDN $rwdcKrbtgtObjectDN $localADforest $adminCrds
 			$objectMetadataAttribPwdLastSet = $null
 			$objectMetadataAttribPwdLastSet = $objectMetadata | Where-Object{$_.Name -eq "pwdLastSet"}
 			$objectMetadataAttribPwdLastSetOrgRWDCFQDN = $null
@@ -6833,7 +6833,7 @@ If ($listOfRWDCsInADDomain) {
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Org Time" -Value $objectMetadataAttribPwdLastSetOrgTime
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Ver" -Value $objectMetadataAttribPwdLastSetVersion
 		} Else {
-			# If The Object Of The KrbTgt Account Does Not Exist
+			# If The Object Of The Krbtgt Account Does Not Exist
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Pwd Last Set" -Value "No Such Object"
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Org RWDC" -Value "No Such Object"
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Org Time" -Value "No Such Object"
@@ -6993,17 +6993,17 @@ If ($listOfRODCsInADDomain) {
 		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "PDC" -Value $false
 		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Site Name" -Value $(If ($rodcObjACC.OperatingSystem) {$rodcObjACC.serverReferenceBL.Split(",")[2].Replace("CN=", "")} Else {"Unknown"})
 		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "DS Type" -Value "Read-Only"
-		$rodcKrbTgtSamAccountName = $null
+		$rodcKrbtgtSamAccountName = $null
 		If ($modeOfOperationNr -eq 1 -Or $modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 5 -Or $modeOfOperationNr -eq 6) {
-			# Use The PROD/REAL KrbTgt Account Of The RODC
+			# Use The PROD/REAL Krbtgt Account Of The RODC
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
-					#$rodcKrbTgtSamAccountName = ((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbTgtLink -Server $targetedADdomainNearestRWDCFQDN)."msDS-KrbTgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN).Name
+					#$rodcKrbtgtSamAccountName = ((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbtgtLink -Server $targetedADdomainNearestRWDCFQDN)."msDS-KrbtgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN).Name
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-					$rodcKrbTgtSamAccountName = (Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbTgtLink"))."msDS-KrbTgtLink"))" -PropertiesToLoad @("name"))."name"
+					$rodcKrbtgtSamAccountName = (Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbtgtLink"))."msDS-KrbtgtLink"))" -PropertiesToLoad @("name"))."name"
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The KrbTgt Account In Use By '$rodcFQDN'..." "ERROR"
+					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The Krbtgt Account In Use By '$rodcFQDN'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -7015,12 +7015,12 @@ If ($listOfRODCsInADDomain) {
 			}
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
-					#$rodcKrbTgtSamAccountName = ((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbTgtLink -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds)."msDS-KrbTgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds).Name
+					#$rodcKrbtgtSamAccountName = ((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbtgtLink -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds)."msDS-KrbtgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds).Name
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-					$rodcKrbTgtSamAccountName = (Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbTgtLink"))."msDS-KrbTgtLink"))" -PropertiesToLoad @("name"))."name"
+					$rodcKrbtgtSamAccountName = (Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbtgtLink"))."msDS-KrbtgtLink"))" -PropertiesToLoad @("name"))."name"
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The KrbTgt Account In Use By '$rodcFQDN' Using '$($adminCrds.UserName)'..." "ERROR"
+					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The Krbtgt Account In Use By '$rodcFQDN' Using '$($adminCrds.UserName)'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -7032,15 +7032,15 @@ If ($listOfRODCsInADDomain) {
 			}
 		}
 		If ($modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 4 -Or $modeOfOperationNr -eq 8 -Or $modeOfOperationNr -eq 9) {
-			# Use The TEST/BOGUS KrbTgt Account Of The RODC
+			# Use The TEST/BOGUS Krbtgt Account Of The RODC
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
-					#$rodcKrbTgtSamAccountName = $(((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbTgtLink -Server $targetedADdomainNearestRWDCFQDN)."msDS-KrbTgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN).Name) + "_TEST"
+					#$rodcKrbtgtSamAccountName = $(((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbtgtLink -Server $targetedADdomainNearestRWDCFQDN)."msDS-KrbtgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN).Name) + "_TEST"
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-					$rodcKrbTgtSamAccountName = $((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbTgtLink"))."msDS-KrbTgtLink"))" -PropertiesToLoad @("name"))."name") + "_TEST"
+					$rodcKrbtgtSamAccountName = $((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbtgtLink"))."msDS-KrbtgtLink"))" -PropertiesToLoad @("name"))."name") + "_TEST"
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The TEST KrbTgt Account In Use By '$rodcFQDN'..." "ERROR"
+					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The TEST Krbtgt Account In Use By '$rodcFQDN'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -7052,12 +7052,12 @@ If ($listOfRODCsInADDomain) {
 			}
 			If ($localADforest -eq $false -And $adminCrds) {
 				Try {
-					#$rodcKrbTgtSamAccountName = $(((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbTgtLink -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds)."msDS-KrbTgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds).Name) + "_TEST"
+					#$rodcKrbtgtSamAccountName = $(((Get-ADObject $($rodcObj.ComputerObjectDN) -properties msDS-KrbtgtLink -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds)."msDS-KrbtgtLink" | Get-ADObject -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds).Name) + "_TEST"
 					$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-					$rodcKrbTgtSamAccountName = $((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbTgtLink"))."msDS-KrbTgtLink"))" -PropertiesToLoad @("name"))."name") + "_TEST"
+					$rodcKrbtgtSamAccountName = $((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$((Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(distinguishedName=$($rodcObjACC.distinguishedName))" -PropertiesToLoad @("msDS-KrbtgtLink"))."msDS-KrbtgtLink"))" -PropertiesToLoad @("name"))."name") + "_TEST"
 				} Catch {
 					Logging "" "ERROR"
-					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The TEST KrbTgt Account In Use By '$rodcFQDN' Using '$($adminCrds.UserName)'..." "ERROR"
+					Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine The TEST Krbtgt Account In Use By '$rodcFQDN' Using '$($adminCrds.UserName)'..." "ERROR"
 					Logging "" "ERROR"
 					Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 					Logging "" "ERROR"
@@ -7068,17 +7068,17 @@ If ($listOfRODCsInADDomain) {
 				}
 			}
 		}
-		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Krb Tgt" -Value $rodcKrbTgtSamAccountName
-		# Retrieve The Object Of The KrbTgt Account
-		$rodcKrbTgtObject = $null
+		$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Krb Tgt" -Value $rodcKrbtgtSamAccountName
+		# Retrieve The Object Of The Krbtgt Account
+		$rodcKrbtgtObject = $null
 		If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 			Try {
-				#$rodcKrbTgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rodcKrbTgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN
+				#$rodcKrbtgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rodcKrbtgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos)).defaultNamingContext.distinguishedName
-				$rodcKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rodcKrbTgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
+				$rodcKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rodcKrbtgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rodcKrbTgtSamAccountName'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rodcKrbtgtSamAccountName'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -7090,12 +7090,12 @@ If ($listOfRODCsInADDomain) {
 		}
 		If ($localADforest -eq $false -And $adminCrds) {
 			Try {
-				#$rodcKrbTgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rodcKrbTgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds
+				#$rodcKrbtgtObject = Get-ADUser -LDAPFilter "(sAMAccountName=$rodcKrbtgtSamAccountName)" -Properties * -Server $targetedADdomainNearestRWDCFQDN -Credential $adminCrds
 				$targetSearchBase = (Get-RootDSE -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds)).defaultNamingContext.distinguishedName
-				$rodcKrbTgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rodcKrbTgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
+				$rodcKrbtgtObject = Find-LdapObject -LdapConnection $(Get-LdapConnection -LdapServer:$targetedADdomainNearestRWDCFQDN -EncryptionType Kerberos -Credential $adminCrds) -searchBase $targetSearchBase -searchFilter "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$rodcKrbtgtSamAccountName))" -PropertiesToLoad @("pwdlastset")
 			} Catch {
 				Logging "" "ERROR"
-				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rodcKrbTgtSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
+				Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' For User Object With 'sAMAccountName=$rodcKrbtgtSamAccountName' Using '$($adminCrds.UserName)'..." "ERROR"
 				Logging "" "ERROR"
 				Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 				Logging "" "ERROR"
@@ -7105,22 +7105,22 @@ If ($listOfRODCsInADDomain) {
 				Logging "" "ERROR"
 			}
 		}
-		If ($rodcKrbTgtObject) {
-			# If The Object Of The KrbTgt Account Exists
+		If ($rodcKrbtgtObject) {
+			# If The Object Of The Krbtgt Account Exists
 			# Retrieve The DN OF The Object
-			$rodcKrbTgtObjectDN = $null
-			$rodcKrbTgtObjectDN = $rodcKrbTgtObject.DistinguishedName
+			$rodcKrbtgtObjectDN = $null
+			$rodcKrbtgtObjectDN = $rodcKrbtgtObject.DistinguishedName
 
-			# Retrieve The Password Last Set Value Of The KrbTgt Account
-			$rodcKrbTgtPwdLastSet = $null
-			$rodcKrbTgtPwdLastSet = Get-Date $([datetime]::fromfiletime($rodcKrbTgtObject.pwdLastSet)) -f "yyyy-MM-dd HH:mm:ss"
+			# Retrieve The Password Last Set Value Of The Krbtgt Account
+			$rodcKrbtgtPwdLastSet = $null
+			$rodcKrbtgtPwdLastSet = Get-Date $([datetime]::fromfiletime($rodcKrbtgtObject.pwdLastSet)) -f "yyyy-MM-dd HH:mm:ss"
 
 			# Set The Corresponding Value Of The RODC In The Correct Column Of The Table
-			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Pwd Last Set" -Value $rodcKrbTgtPwdLastSet
+			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Pwd Last Set" -Value $rodcKrbtgtPwdLastSet
 
 			# Retrieve The Metadata Of The Object, And More Specific Of The pwdLastSet Attribute Of That Object
 			$objectMetadata = $null
-			$objectMetadata = retrieveObjectMetadata $targetedADdomainNearestRWDCFQDN $rodcKrbTgtObjectDN $localADforest $adminCrds
+			$objectMetadata = retrieveObjectMetadata $targetedADdomainNearestRWDCFQDN $rodcKrbtgtObjectDN $localADforest $adminCrds
 			$objectMetadataAttribPwdLastSet = $null
 			$objectMetadataAttribPwdLastSet = $objectMetadata | Where-Object{$_.Name -eq "pwdLastSet"}
 			$objectMetadataAttribPwdLastSetOrgRWDCFQDN = $null
@@ -7135,7 +7135,7 @@ If ($listOfRODCsInADDomain) {
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Org Time" -Value $objectMetadataAttribPwdLastSetOrgTime
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Ver" -Value $objectMetadataAttribPwdLastSetVersion
 		} Else {
-			# If The Object Of The KrbTgt Account Does Not Exist
+			# If The Object Of The Krbtgt Account Does Not Exist
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Pwd Last Set" -Value "No Such Object"
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Org RWDC" -Value "No Such Object"
 			$tableOfDCsInADDomainObj | Add-Member -MemberType NoteProperty -Name "Org Time" -Value "No Such Object"
@@ -7340,8 +7340,8 @@ Logging " - 'Unknown' in various columns means that an RODC was found that may n
 Logging " - 'RWDC Demoted' in the column 'Org RWDC' means the RWDC existed once, but it does not exist anymore as it has been decommissioned in the past." "REMARK"
 Logging "     This is normal." "REMARK"
 Logging " - 'No Such Object' in the columns 'Pwd Last Set', 'Org RWDC', 'Org Time' or 'Ver' means the targeted object was not found in the AD domain." "REMARK"
-Logging "     Although this is possible for any targeted object, this is most likely the case when targeting the KrbTgt TEST/BOGUS accounts and if those" "REMARK"
-Logging "     do not exist yet. This may also occur for an appliance acting as an RODC as in that case no KrbTgt TEST/BOGUS account is created." "REMARK"
+Logging "     Although this is possible for any targeted object, this is most likely the case when targeting the Krbtgt TEST/BOGUS accounts and if those" "REMARK"
+Logging "     do not exist yet. This may also occur for an appliance acting as an RODC as in that case no Krbtgt TEST/BOGUS account is created." "REMARK"
 $krbTgtAADname = "krbtgt_AzureAD"
 Try {
 	If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
@@ -7356,7 +7356,7 @@ Try {
 	}
 } Catch {
 	Logging "" "ERROR"
-	Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine If An Azure AD KrbTgt Account Existed..." "ERROR"
+	Logging "Error Querying AD Against '$targetedADdomainNearestRWDCFQDN' To Determine If An Azure AD Krbtgt Account Existed..." "ERROR"
 	Logging "" "ERROR"
 	Logging "Exception Type......: $($_.Exception.GetType().FullName)" "ERROR"
 	Logging "" "ERROR"
@@ -7468,42 +7468,42 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 }
 
 ###
-# Mode 2 And 3 And 4 and 5 And 6 Only - Selecting The KrbTgt Account To Target And Scope If Applicable (Only Applicable To RODCs)
+# Mode 2 And 3 And 4 and 5 And 6 Only - Selecting The Krbtgt Account To Target And Scope If Applicable (Only Applicable To RODCs)
 ###
 If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 4 -Or $modeOfOperationNr -eq 5 -Or $modeOfOperationNr -eq 6) {
 	Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
 	Logging "SELECT THE SCOPE OF THE KRBTGT ACCOUNT(S) TO TARGET..." "HEADER"
 	Logging ""
-	Logging "Which KrbTgt account do you want to target?"
+	Logging "Which Krbtgt account do you want to target?"
 	Logging ""
-	Logging " - 1 - Scope of KrbTgt in use by all RWDCs in the AD Domain"
+	Logging " - 1 - Scope of Krbtgt in use by all RWDCs in the AD Domain"
 	Logging ""
 	If ($nrOfRODCs -gt 0) {
-		Logging " - 2 - Scope of KrbTgt in use by specific RODC - Single/Multiple RODC(s) in the AD Domain"
+		Logging " - 2 - Scope of Krbtgt in use by specific RODC - Single/Multiple RODC(s) in the AD Domain"
 		Logging ""
-		Logging " - 3 - Scope of KrbTgt in use by specific RODC - All RODCs in the AD Domain"
+		Logging " - 3 - Scope of Krbtgt in use by specific RODC - All RODCs in the AD Domain"
 		Logging ""
 	}
 	Logging ""
 	Logging " - 0 - Exit Script"
 	Logging ""
-	Switch ($targetKrbTgtAccountScope) {
-		"allRWDCs" {$targetKrbTgtAccountNr = 1}
-		"specificRODCs"	{ $targetKrbTgtAccountNr = 2}
-		"allRODCs" {$targetKrbTgtAccountNr = 3}
-		Default {$targetKrbTgtAccountNr = $null}
+	Switch ($targetKrbtgtAccountScope) {
+		"allRWDCs" {$targetKrbtgtAccountNr = 1}
+		"specificRODCs"	{ $targetKrbtgtAccountNr = 2}
+		"allRODCs" {$targetKrbtgtAccountNr = 3}
+		Default {$targetKrbtgtAccountNr = $null}
 	}
-	If ($null -eq $targetKrbTgtAccountNr) {
-		Logging "Please specify the scope of KrbTgt Account to target: " "ACTION-NO-NEW-LINE"
-		$targetKrbTgtAccountNr = Read-Host
+	If ($null -eq $targetKrbtgtAccountNr) {
+		Logging "Please specify the scope of Krbtgt Account to target: " "ACTION-NO-NEW-LINE"
+		$targetKrbtgtAccountNr = Read-Host
 	} Else {
-		Logging "Please specify the scope of KrbTgt Account to target: $targetKrbTgtAccountNr" "ACTION"
+		Logging "Please specify the scope of Krbtgt Account to target: $targetKrbtgtAccountNr" "ACTION"
 	}
 	Logging ""
 
-	# If Anything Else Than The Allowed/Available Non-Zero KrbTgt Accounts, Abort The Script
-	If (($targetKrbTgtAccountNr -ne 1 -And $targetKrbTgtAccountNr -ne 2 -And $targetKrbTgtAccountNr -ne 3) -Or $targetKrbTgtAccountNr -notmatch "^[\d\.]+$") {
-		Logging "  --> Chosen Scope KrbTgt Account Target: 0 - Exit Script..." "REMARK"
+	# If Anything Else Than The Allowed/Available Non-Zero Krbtgt Accounts, Abort The Script
+	If (($targetKrbtgtAccountNr -ne 1 -And $targetKrbtgtAccountNr -ne 2 -And $targetKrbtgtAccountNr -ne 3) -Or $targetKrbtgtAccountNr -notmatch "^[\d\.]+$") {
+		Logging "  --> Chosen Scope Krbtgt Account Target: 0 - Exit Script..." "REMARK"
 		Logging ""
 
 		If ($argsCount -gt 0 -And $sendMailWithLogFile) {
@@ -7526,31 +7526,31 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 		EXIT
 	}
 
-	# If KrbTgt Account Scope 1
-	If ($targetKrbTgtAccountNr -eq 1) {
-		$targetKrbTgtAccountDescription = "1 - Scope of KrbTgt in use by all RWDCs in the AD Domain..."
+	# If Krbtgt Account Scope 1
+	If ($targetKrbtgtAccountNr -eq 1) {
+		$targetKrbtgtAccountDescription = "1 - Scope of Krbtgt in use by all RWDCs in the AD Domain..."
 	}
 
-	# If KrbTgt Account Scope 2
-	If ($targetKrbTgtAccountNr -eq 2) {
-		$targetKrbTgtAccountDescription = "2 - Scope of KrbTgt in use by specific RODC - Single/Multiple RODC(s) in the AD Domain..."
+	# If Krbtgt Account Scope 2
+	If ($targetKrbtgtAccountNr -eq 2) {
+		$targetKrbtgtAccountDescription = "2 - Scope of Krbtgt in use by specific RODC - Single/Multiple RODC(s) in the AD Domain..."
 	}
 
-	# If KrbTgt Account Scope 3
-	If ($targetKrbTgtAccountNr -eq 3) {
-		$targetKrbTgtAccountDescription = "3 - Scope of KrbTgt in use by specific RODC - All RODCs in the AD Domain..."
+	# If Krbtgt Account Scope 3
+	If ($targetKrbtgtAccountNr -eq 3) {
+		$targetKrbtgtAccountDescription = "3 - Scope of Krbtgt in use by specific RODC - All RODCs in the AD Domain..."
 	}
-	Logging "  --> Chosen Scope KrbTgt Account Target: $targetKrbTgtAccountDescription" "REMARK"
+	Logging "  --> Chosen Scope Krbtgt Account Target: $targetKrbtgtAccountDescription" "REMARK"
 	Logging ""
 
 	# Use The RWDC With The PDC FSMO Role To Represent All RWDCs In The AD Domain
-	If ($targetKrbTgtAccountNr -eq 1) {
+	If ($targetKrbtgtAccountNr -eq 1) {
 		$targetDCFQDNList = $tableOfDCsInADDomain | Where-Object{$_.PDC -eq $true}
 	}
 
 	# Present List Of RODCs When Option 2 Or 3 Is Chosen To Make It Easier To Chose From
 	# Specify A Comma Separated List Of FQDNs Of RODCs To Target (Single/Multiple)
-	If ($targetKrbTgtAccountNr -eq 2) {
+	If ($targetKrbtgtAccountNr -eq 2) {
 		Logging "" "REMARK"
 		Logging "List Of Read-Only Domain Controllers In AD Domain '$targetedADdomainFQDN'..."
 		Logging "" "REMARK"
@@ -7558,7 +7558,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 		Logging "" "REMARK"
 
 		If ($targetRODCFQDNList.Length -eq 0) {
-			Logging "Specify a single, or comma-separated list of FQDNs of RODCs for which the KrbTgt Account Password must be reset: " "ACTION-NO-NEW-LINE"
+			Logging "Specify a single, or comma-separated list of FQDNs of RODCs for which the Krbtgt Account Password must be reset: " "ACTION-NO-NEW-LINE"
 			$targetDCFQDNList = Read-Host
 			$targetDCFQDNList = $targetDCFQDNList.Split(",")
 		} Else {
@@ -7581,7 +7581,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 	If ($modeOfOperationNr -eq 2) {
 		Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
 		Logging "SIMULATION MODE (MODE $modeOfOperationNr) - CREATING/REPLICATING TEMPORARY CANARY OBJECT TO TEST REPLICATION CONVERGENCE" "HEADER"
-		Logging "SCOPE: $targetKrbTgtAccountDescription" "HEADER"
+		Logging "SCOPE: $targetKrbtgtAccountDescription" "HEADER"
 		Logging ""
 	}
 
@@ -7589,7 +7589,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 	If ($modeOfOperationNr -eq 3) {
 		Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
 		Logging "SIMULATION MODE (MODE $modeOfOperationNr) - RESETTING PASSWORD OF SCOPED TEST/BOGUS KRBTGT ACCOUNT(S) (WHAT IF MODE)" "HEADER"
-		Logging "SCOPE: $targetKrbTgtAccountDescription" "HEADER"
+		Logging "SCOPE: $targetKrbtgtAccountDescription" "HEADER"
 		Logging ""
 	}
 
@@ -7597,7 +7597,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 	If ($modeOfOperationNr -eq 4) {
 		Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
 		Logging "REAL RESET MODE (MODE $modeOfOperationNr) - RESETTING PASSWORD OF SCOPED TEST/BOGUS KRBTGT ACCOUNT(S)" "HEADER"
-		Logging "SCOPE: $targetKrbTgtAccountDescription" "HEADER"
+		Logging "SCOPE: $targetKrbtgtAccountDescription" "HEADER"
 		Logging ""
 	}
 
@@ -7605,7 +7605,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 	If ($modeOfOperationNr -eq 5) {
 		Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
 		Logging "SIMULATION MODE (MODE $modeOfOperationNr) - RESETTING PASSWORD OF SCOPED PROD/REAL KRBTGT ACCOUNT(S) (WHAT IF MODE)" "HEADER"
-		Logging "SCOPE: $targetKrbTgtAccountDescription" "HEADER"
+		Logging "SCOPE: $targetKrbtgtAccountDescription" "HEADER"
 		Logging ""
 	}
 
@@ -7613,7 +7613,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 	If ($modeOfOperationNr -eq 6) {
 		Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
 		Logging "REAL RESET MODE (MODE $modeOfOperationNr) - RESETTING PASSWORD OF SCOPED PROD/REAL KRBTGT ACCOUNT(S)" "HEADER"
-		Logging "SCOPE: $targetKrbTgtAccountDescription" "HEADER"
+		Logging "SCOPE: $targetKrbtgtAccountDescription" "HEADER"
 		Logging ""
 	}
 
@@ -7657,15 +7657,15 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 		EXIT
 	}
 
-	# For The KrbTgt Account Scope Of All RWDCs
-	If ($targetKrbTgtAccountNr -eq 1) {
+	# For The Krbtgt Account Scope Of All RWDCs
+	If ($targetKrbtgtAccountNr -eq 1) {
 		# Collection Of DCs To Process
 		$collectionOfDCsToProcess = @()
 		$collectionOfDCsToProcess += $targetDCFQDNList
 	}
 
-	# For The KrbTgt Account Scope Of Specified, But Individual RODCs
-	If ($targetKrbTgtAccountNr -eq 2) {
+	# For The Krbtgt Account Scope Of Specified, But Individual RODCs
+	If ($targetKrbtgtAccountNr -eq 2) {
 		# Collection Of Reachable RODCs
 		$collectionOfRODCsToProcessReachable = @()
 		$collectionOfRODCsToProcessReachable += $tableOfDCsInADDomain | Where-Object{$_."DS Type" -eq "Read-Only" -And $_.Reachable -eq $true -And $_."Source RWDC FQDN" -ne "Unknown" -And $_."Source RWDC FQDN" -ne "RODC Unreachable" -And $targetDCFQDNList -contains $_."Host Name"}
@@ -7688,8 +7688,8 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 		$collectionOfDCsNotToProcess += $collectionOfRODCsToProcessUnknown
 	}
 
-	# For The KrbTgt Account Scope Of Each Individual RODCs
-	If ($targetKrbTgtAccountNr -eq 3) {
+	# For The Krbtgt Account Scope Of Each Individual RODCs
+	If ($targetKrbtgtAccountNr -eq 3) {
 		# Collection Of Reachable RODCs
 		$collectionOfRODCsToProcessReachable = @()
 		$collectionOfRODCsToProcessReachable += $tableOfDCsInADDomain | Where-Object{$_."DS Type" -eq "Read-Only" -And $_.Reachable -eq $true -And $_."Source RWDC FQDN" -ne "Unknown" -And $_."Source RWDC FQDN" -ne "RODC Unreachable"}
@@ -7719,11 +7719,11 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 			$dcToProcess = $null
 			$dcToProcess = $_
 
-			# Retrieve The sAMAccountName Of The KrbTgt Account In Use By The DC(s)
+			# Retrieve The sAMAccountName Of The Krbtgt Account In Use By The DC(s)
 			$krbTgtSamAccountName = $null
 			$krbTgtSamAccountName = $dcToProcess."Krb Tgt"
 
-			# Retrieve The KrbTgt Account Object DN
+			# Retrieve The Krbtgt Account Object DN
 			$krbTgtObjectDN = $null
 			If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 				Try {
@@ -7760,24 +7760,24 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 				}
 			}
 
-			# Present The Information Of The KrbTgt Account Scope Being Processed
+			# Present The Information Of The Krbtgt Account Scope Being Processed
 			Logging "+++++" "REMARK"
-			Logging "+++ Processing KrbTgt Account....: '$krbTgtSamAccountName' | '$krbTgtObjectDN' +++" "REMARK"
-			If ($targetKrbTgtAccountNr -eq 1) {
+			Logging "+++ Processing Krbtgt Account....: '$krbTgtSamAccountName' | '$krbTgtObjectDN' +++" "REMARK"
+			If ($targetKrbtgtAccountNr -eq 1) {
 				Logging "+++ Used By RWDC.................: 'All RWDCs' +++" "REMARK"
 			}
-			If ($targetKrbTgtAccountNr -eq 2 -Or $targetKrbTgtAccountNr -eq 3) {
+			If ($targetKrbtgtAccountNr -eq 2 -Or $targetKrbtgtAccountNr -eq 3) {
 				Logging "+++ Used By RODC.................: '$($dcToProcess."Host Name")' (Site: $($dcToProcess."Site Name")) +++" "REMARK"
 			}
 			Logging "+++++" "REMARK"
 			Logging "" "REMARK"
 
 			# Determine The HostName Of The Source RWDC
-			If ($targetKrbTgtAccountNr -eq 1) {
+			If ($targetKrbtgtAccountNr -eq 1) {
 				$targetedADdomainSourceRWDCFQDN = $null
 				$targetedADdomainSourceRWDCFQDN = $dcToProcess."Host Name"
 			}
-			If ($targetKrbTgtAccountNr -eq 2 -Or $targetKrbTgtAccountNr -eq 3) {
+			If ($targetKrbtgtAccountNr -eq 2 -Or $targetKrbtgtAccountNr -eq 3) {
 				$targetedADdomainDCToProcessReachability = $null
 				$targetedADdomainDCToProcessReachability = $dcToProcess.Reachable
 
@@ -7855,12 +7855,12 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 					}
 				}
 
-				# If Mode 3, Simulate Password Reset Of KrbTgt TEST/BOGUS Accounts (No Password Reset/WhatIf Mode)
-				# If Mode 4, Do A Real Password Reset Of KrbTgt TEST/BOGUS Accounts (Password Reset!)
-				# If Mode 5, Simulate Password Reset Of KrbTgt PROD/REAL Accounts (No Password Reset/WhatIf Mode)
-				# If Mode 6, Do A Real Password Reset Of KrbTgt PROD/REAL Accounts (Password Reset!)
+				# If Mode 3, Simulate Password Reset Of Krbtgt TEST/BOGUS Accounts (No Password Reset/WhatIf Mode)
+				# If Mode 4, Do A Real Password Reset Of Krbtgt TEST/BOGUS Accounts (Password Reset!)
+				# If Mode 5, Simulate Password Reset Of Krbtgt PROD/REAL Accounts (No Password Reset/WhatIf Mode)
+				# If Mode 6, Do A Real Password Reset Of Krbtgt PROD/REAL Accounts (Password Reset!)
 				If ($modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 4 -Or $modeOfOperationNr -eq 5 -Or $modeOfOperationNr -eq 6) {
-					# Retrieve The KrbTgt Account Object
+					# Retrieve The Krbtgt Account Object
 					$targetObjectToCheck = $null
 					If ($localADforest -eq $true -Or ($localADforest -eq $false -And !$adminCrds)) {
 						Try {
@@ -7897,10 +7897,10 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 						}
 					}
 
-					# If The KrbTgt Account Object Was Found
+					# If The Krbtgt Account Object Was Found
 					If ($targetObjectToCheck) {
-						# If The KrbTgt Account Object Exists (You're In Deep Sh!t If The Account Does Not Exist! :-))
-						# Retrieve The DN Of The KrbTgt Account Object
+						# If The Krbtgt Account Object Exists (You're In Deep Sh!t If The Account Does Not Exist! :-))
+						# Retrieve The DN Of The Krbtgt Account Object
 						$targetObjectToCheckDN = $null
 						$targetObjectToCheckDN = $targetObjectToCheck.DistinguishedName
 
@@ -7916,12 +7916,12 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 						$objectMetadataAttribPwdLastSetVersion = $null
 						$objectMetadataAttribPwdLastSetVersion = $objectMetadataAttribPwdLastSet.Version
 
-						# Retrieve The Password Last Set Of The KrbTgt Account Object
+						# Retrieve The Password Last Set Of The Krbtgt Account Object
 						$targetObjectToCheckPwdLastSet = $null
 						$targetObjectToCheckPwdLastSet = Get-Date $([datetime]::fromfiletime($targetObjectToCheck.pwdLastSet))
 
-						# If Mode 3, Do A WHAT IF Password Reset Of KrbTgt TEST/BOGUS Accounts (No Password Reset!)
-						# If Mode 5, Do A WHAT IF Password Reset Of KrbTgt PROD/REAL Accounts (No Password Reset!)
+						# If Mode 3, Do A WHAT IF Password Reset Of Krbtgt TEST/BOGUS Accounts (No Password Reset!)
+						# If Mode 5, Do A WHAT IF Password Reset Of Krbtgt PROD/REAL Accounts (No Password Reset!)
 						If ($modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 5) {
 							Logging "  --> According To RWDC.....................: '$targetedADdomainNearestRWDCFQDN'"
 							Logging "  --> Previous Password Set Date/Time.......: '$(Get-Date $targetObjectToCheckPwdLastSet -f 'yyyy-MM-dd HH:mm:ss')'"
@@ -7933,8 +7933,8 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 							Logging ""
 						}
 
-						# If Mode 4, Do A Real Password Reset Of KrbTgt TEST/BOGUS Accounts (Password Reset!)
-						# If Mode 6, Do A Real Password Reset Of KrbTgt PROD/REAL Accounts (Password Reset!)
+						# If Mode 4, Do A Real Password Reset Of Krbtgt TEST/BOGUS Accounts (Password Reset!)
+						# If Mode 6, Do A Real Password Reset Of Krbtgt PROD/REAL Accounts (Password Reset!)
 						If ($modeOfOperationNr -eq 4 -Or $modeOfOperationNr -eq 6) {
 							# Calculate The Expiration Date/Time Of N-1 Kerberos Tickets
 							$expirationTimeForNMinusOneKerbTickets = $null
@@ -7960,40 +7960,40 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 								Logging "  --> Current Version Of Attribute Value....: '$objectMetadataAttribPwdLastSetVersion'"
 								Logging ""
 								$continueOrStop = $null
-								If ($targetKrbTgtAccountNr -eq 1) {
+								If ($targetKrbtgtAccountNr -eq 1) {
 									If ($argsCount -gt 0) {
 										$continueOrStop = "STOP"
-										Logging "  --> Resetting KrbTgt Accnt Password Means.: 'MAJOR DOMAIN WIDE IMPACT'" "WARNING"
+										Logging "  --> Resetting Krbtgt Accnt Password Means.: 'MAJOR DOMAIN WIDE IMPACT'" "WARNING"
 										Logging "" "WARNING"
 										Logging "What do you want to do? [CONTINUE | STOP]: $continueOrStop" "ACTION"
 									} Else {
-										Logging "  --> Resetting KrbTgt Accnt Password Means.: 'MAJOR DOMAIN WIDE IMPACT'" "WARNING"
+										Logging "  --> Resetting Krbtgt Accnt Password Means.: 'MAJOR DOMAIN WIDE IMPACT'" "WARNING"
 										Logging "" "WARNING"
 										Logging "What do you want to do? [CONTINUE | STOP]: " "ACTION-NO-NEW-LINE"
 										$continueOrStop = Read-Host
 									}
 								}
-								If ($targetKrbTgtAccountNr -eq 2 -Or $targetKrbTgtAccountNr -eq 3) {
+								If ($targetKrbtgtAccountNr -eq 2 -Or $targetKrbtgtAccountNr -eq 3) {
 									If ($argsCount -gt 0) {
 										$continueOrStop = "STOP"
-										Logging "  --> Resetting KrbTgt Accnt Password Means.: 'MAJOR IMPACT FOR RESOURCES SERVICED BY $($dcToProcess."Host Name")' (Site: $($dcToProcess."Site Name"))" "WARNING"
+										Logging "  --> Resetting Krbtgt Accnt Password Means.: 'MAJOR IMPACT FOR RESOURCES SERVICED BY $($dcToProcess."Host Name")' (Site: $($dcToProcess."Site Name"))" "WARNING"
 										Logging "" "WARNING"
 										Logging "What do you want to do? [CONTINUE | SKIP | STOP]: $continueOrStop" "ACTION"
 									} Else {
-										Logging "  --> Resetting KrbTgt Accnt Password Means.: 'MAJOR IMPACT FOR RESOURCES SERVICED BY $($dcToProcess."Host Name")' (Site: $($dcToProcess."Site Name"))" "WARNING"
+										Logging "  --> Resetting Krbtgt Accnt Password Means.: 'MAJOR IMPACT FOR RESOURCES SERVICED BY $($dcToProcess."Host Name")' (Site: $($dcToProcess."Site Name"))" "WARNING"
 										Logging "" "WARNING"
 										Logging "What do you want to do? [CONTINUE | SKIP | STOP]: " "ACTION-NO-NEW-LINE"
 										$continueOrStop = Read-Host
 									}
 								}
 
-								If ($targetKrbTgtAccountNr -eq 1) {
+								If ($targetKrbtgtAccountNr -eq 1) {
 									# Any Confirmation Not Equal To CONTINUE Will Be Equal To STOP
 									If ($continueOrStop.ToUpper() -ne "CONTINUE") {
 										$continueOrStop = "STOP"
 									}
 								}
-								If ($targetKrbTgtAccountNr -eq 2 -Or $targetKrbTgtAccountNr -eq 3) {
+								If ($targetKrbtgtAccountNr -eq 2 -Or $targetKrbtgtAccountNr -eq 3) {
 									# Any Confirmation Not Equal To CONTINUE And Not Equal To SKIP And Not Equal To STOP Will Be Equal To STOP
 									If ($continueOrStop.ToUpper() -ne "CONTINUE" -And $continueOrStop.ToUpper() -ne "SKIP" -And $continueOrStop.ToUpper() -ne "STOP") {
 										$continueOrStop = "STOP"
@@ -8012,7 +8012,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 								Logging ""
 							}
 							If ($okToReset -eq $true) {
-								# If OK To Reset Then Execute The Password Reset Of The KrbTgt Account
+								# If OK To Reset Then Execute The Password Reset Of The Krbtgt Account
 								setPasswordOfADAccount $targetedADdomainSourceRWDCFQDN $krbTgtSamAccountName $localADforest $adminCrds
 							} Else {
 								# If Not OK To Reset Then Abort
@@ -8036,14 +8036,14 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 								EXIT
 							}
 						}
-						# If Mode 3, Do A WHAT IF Password Reset Of KrbTgt TEST/BOGUS Accounts (No Password Reset!)
-						# If Mode 5, Do A WHAT IF Password Reset Of KrbTgt PROD/REAL Accounts (No Password Reset!)
+						# If Mode 3, Do A WHAT IF Password Reset Of Krbtgt TEST/BOGUS Accounts (No Password Reset!)
+						# If Mode 5, Do A WHAT IF Password Reset Of Krbtgt PROD/REAL Accounts (No Password Reset!)
 						If ($modeOfOperationNr -eq 3 -Or $modeOfOperationNr -eq 5) {
 
 						}
 					} Else {
-						# If The KrbTgt Account Object Does Not Exist (You're In Deep Sh!t If The Account Does Not Exist! :-))
-						Logging "  --> KrbTgt Account With sAMAccountName '$krbTgtSamAccountName' Does NOT Exist! Skipping..." "ERROR"
+						# If The Krbtgt Account Object Does Not Exist (You're In Deep Sh!t If The Account Does Not Exist! :-))
+						Logging "  --> Krbtgt Account With sAMAccountName '$krbTgtSamAccountName' Does NOT Exist! Skipping..." "ERROR"
 						Logging "" "ERROR"
 					}
 				}
@@ -8054,14 +8054,14 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 				Logging ""
 			}
 
-			# If The DN Of The Target Object To Check (Temp Canary Object Or KrbTgt Account, Depends On The Mode Chosen) Was Determined/Found
+			# If The DN Of The Target Object To Check (Temp Canary Object Or Krbtgt Account, Depends On The Mode Chosen) Was Determined/Found
 			If ($targetObjectToCheckDN) {
 				# Retrieve/Define The Start List With RWDCs To Check
-				If ($targetKrbTgtAccountNr -eq 1) {
+				If ($targetKrbtgtAccountNr -eq 1) {
 					$listOfDCsToCheckObjectOnStart = $null
 					$listOfDCsToCheckObjectOnStart = ($tableOfDCsInADDomain | Where-Object{$_."DS Type" -eq "Read/Write"})
 				}
-				If ($targetKrbTgtAccountNr -eq 2 -Or $targetKrbTgtAccountNr -eq 3) {
+				If ($targetKrbtgtAccountNr -eq 2 -Or $targetKrbtgtAccountNr -eq 3) {
 					$listOfDCsToCheckObjectOnStart = @()
 					$listOfDCsToCheckObjectOnStart += $tableOfDCsInADDomain | Where-Object{$_."Host Name" -eq $targetedADdomainSourceRWDCFQDN}
 					$listOfDCsToCheckObjectOnStart += $dcToProcess
@@ -8131,7 +8131,7 @@ If ($modeOfOperationNr -eq 2 -Or $modeOfOperationNr -eq 3 -Or $modeOfOperationNr
 }
  
 ###
-# Mode 8 - Create TEST KrbTgt Accounts
+# Mode 8 - Create TEST Krbtgt Accounts
 ###
 If ($modeOfOperationNr -eq 8) {
 	Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
@@ -8172,21 +8172,21 @@ If ($modeOfOperationNr -eq 8) {
 		EXIT
 	}
 
-	# Retrieve The FQDN Of The RWDC With The PDC FSMO To Create The TEST/BOGUS KrbTgt Account Objects
+	# Retrieve The FQDN Of The RWDC With The PDC FSMO To Create The TEST/BOGUS Krbtgt Account Objects
 	$targetedADdomainSourceRWDCFQDN = $null
 	$targetedADdomainSourceRWDCFQDN = ($tableOfDCsInADDomain | Where-Object{$_.PDC -eq $True})."Host Name"
 
-	# Determine The KrbTgt Account In Use By The RWDC with The PDC FSMO (Representative For All RWDCs In The AD Domain)
+	# Determine The Krbtgt Account In Use By The RWDC with The PDC FSMO (Representative For All RWDCs In The AD Domain)
 	$krbTgtSamAccountName = $null
 	$krbTgtSamAccountName = ($tableOfDCsInADDomain | Where-Object{$_.PDC -eq $True})."Krb Tgt"
 	Logging "+++++" "REMARK"
-	Logging "+++ Create Test KrbTgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
+	Logging "+++ Create Test Krbtgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
 	Logging "+++ Used By RWDC.................: 'All RWDCs' +++" "REMARK"
 	Logging "+++++" "REMARK"
 	Logging "" "REMARK"
 
-	# Execute The Creation Test KrbTgt Accounts Function To Create The TEST/BOGUS KrbTgt Account For RWDCs
-	createTestKrbTgtADAccount $targetedADdomainSourceRWDCFQDN $targetedADdomainSourceRWDCFQDN $krbTgtSamAccountName "RWDC" $targetedADdomainDomainSID $localADforest $adminCrds
+	# Execute The Creation Test Krbtgt Accounts Function To Create The TEST/BOGUS Krbtgt Account For RWDCs
+	createTestKrbtgtADAccount $targetedADdomainSourceRWDCFQDN $targetedADdomainSourceRWDCFQDN $krbTgtSamAccountName "RWDC" $targetedADdomainDomainSID $localADforest $adminCrds
 
 	# For All RODCs In The AD Domain That Do Not Have An Unknown RWDC Specfied
 	$tableOfDCsInADDomain | Where-Object{$_."DS Type" -eq "Read-Only" -And $_."Source RWDC FQDN" -ne "Unknown"} | ForEach-Object {
@@ -8194,7 +8194,7 @@ If ($modeOfOperationNr -eq 8) {
 		$rodcToProcess = $null
 		$rodcToProcess = $_
 
-		# Retrieve The sAMAccountName Of The KrbTgt Account In Use By The RODC
+		# Retrieve The sAMAccountName Of The Krbtgt Account In Use By The RODC
 		$krbTgtSamAccountName = $null
 		$krbTgtSamAccountName = $rodcToProcess."Krb Tgt"
 
@@ -8206,18 +8206,18 @@ If ($modeOfOperationNr -eq 8) {
 		$rodcSiteTarget = $null
 		$rodcSiteTarget = $rodcToProcess."Site Name"
 		Logging "+++++" "REMARK"
-		Logging "+++ Create Test KrbTgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
+		Logging "+++ Create Test Krbtgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
 		Logging "+++ Used By RODC.................: '$rodcFQDNTarget' (Site: $rodcSiteTarget) +++" "REMARK"
 		Logging "+++++" "REMARK"
 		Logging "" "REMARK"
 
-		# Execute The Create Test KrbTgt Accounts Function To Create The TEST/BOGUS KrbTgt Account For Each RODC
-		createTestKrbTgtADAccount $targetedADdomainSourceRWDCFQDN $rodcFQDNTarget $krbTgtSamAccountName "RODC" $targetedADdomainDomainSID $localADforest $adminCrds
+		# Execute The Create Test Krbtgt Accounts Function To Create The TEST/BOGUS Krbtgt Account For Each RODC
+		createTestKrbtgtADAccount $targetedADdomainSourceRWDCFQDN $rodcFQDNTarget $krbTgtSamAccountName "RODC" $targetedADdomainDomainSID $localADforest $adminCrds
 	}
 }
 
 ###
-# Mode 9 - Cleanup TEST KrbTgt Accounts
+# Mode 9 - Cleanup TEST Krbtgt Accounts
 ###
 If ($modeOfOperationNr -eq 9) {
 	Logging "------------------------------------------------------------------------------------------------------------------------------------------------------" "HEADER"
@@ -8258,21 +8258,21 @@ If ($modeOfOperationNr -eq 9) {
 		EXIT
 	}
 
-	# Retrieve The FQDN Of The RWDC With The PDC FSMO To Delete The TEST/BOGUS KrbTgt Account Objects
+	# Retrieve The FQDN Of The RWDC With The PDC FSMO To Delete The TEST/BOGUS Krbtgt Account Objects
 	$targetedADdomainSourceRWDCFQDN = $null
 	$targetedADdomainSourceRWDCFQDN = ($tableOfDCsInADDomain | Where-Object{$_.PDC -eq $True})."Host Name"
 
-	# Determine The KrbTgt Account In Use By The RWDC with The PDC FSMO (Representative For All RWDCs In The AD Domain)
+	# Determine The Krbtgt Account In Use By The RWDC with The PDC FSMO (Representative For All RWDCs In The AD Domain)
 	$krbTgtSamAccountName = $null
 	$krbTgtSamAccountName = ($tableOfDCsInADDomain | Where-Object{$_.PDC -eq $True})."Krb Tgt"
 	Logging "+++++" "REMARK"
-	Logging "+++ Delete Test KrbTgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
+	Logging "+++ Delete Test Krbtgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
 	Logging "+++ Used By RWDC.................: 'All RWDCs' +++" "REMARK"
 	Logging "+++++" "REMARK"
 	Logging "" "REMARK"
 
-	# Execute The Delete Test KrbTgt Accounts Function To Delete The TEST/BOGUS KrbTgt Account For RWDCs. There Is No Need To Force Deletion Of The Object On All The Other DCs As In Time It Will Be Deleted
-	deleteTestKrbTgtADAccount $targetedADdomainSourceRWDCFQDN $krbTgtSamAccountName $localADforest $adminCrds
+	# Execute The Delete Test Krbtgt Accounts Function To Delete The TEST/BOGUS Krbtgt Account For RWDCs. There Is No Need To Force Deletion Of The Object On All The Other DCs As In Time It Will Be Deleted
+	deleteTestKrbtgtADAccount $targetedADdomainSourceRWDCFQDN $krbTgtSamAccountName $localADforest $adminCrds
 
 	# For All RODCs In The AD Domain That Do Not Have An Unknown RWDC Specfied
 	$tableOfDCsInADDomain | Where-Object{$_."DS Type" -eq "Read-Only" -And $_."Source RWDC FQDN" -ne "Unknown"} | ForEach-Object {
@@ -8280,7 +8280,7 @@ If ($modeOfOperationNr -eq 9) {
 		$rodcToProcess = $null
 		$rodcToProcess = $_
 
-		# Retrieve The sAMAccountName Of The KrbTgt Account In Use By The RODC
+		# Retrieve The sAMAccountName Of The Krbtgt Account In Use By The RODC
 		$krbTgtSamAccountName = $null
 		$krbTgtSamAccountName = $rodcToProcess."Krb Tgt"
 
@@ -8292,13 +8292,13 @@ If ($modeOfOperationNr -eq 9) {
 		$rodcSiteTarget = $null
 		$rodcSiteTarget = $rodcToProcess."Site Name"
 		Logging "+++++" "REMARK"
-		Logging "+++ Delete Test KrbTgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
+		Logging "+++ Delete Test Krbtgt Account...: '$krbTgtSamAccountName' +++" "REMARK"
 		Logging "+++ Used By RODC.................: '$rodcFQDNTarget' (Site: $rodcSiteTarget) +++" "REMARK"
 		Logging "+++++" "REMARK"
 		Logging "" "REMARK"
 
-		# Execute The Delete Test KrbTgt Accounts Function To Delete The TEST/BOGUS KrbTgt Account For Each RODC. There Is No Need To Force Deletion Of The Object On All The Other DCs As In Time It Will Be Deleted
-		deleteTestKrbTgtADAccount $targetedADdomainSourceRWDCFQDN $krbTgtSamAccountName $localADforest $adminCrds
+		# Execute The Delete Test Krbtgt Accounts Function To Delete The TEST/BOGUS Krbtgt Account For Each RODC. There Is No Need To Force Deletion Of The Object On All The Other DCs As In Time It Will Be Deleted
+		deleteTestKrbtgtADAccount $targetedADdomainSourceRWDCFQDN $krbTgtSamAccountName $localADforest $adminCrds
 	}
 }
 
